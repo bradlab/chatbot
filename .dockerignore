@@ -1,0 +1,41 @@
+# Ignorer les environnements virtuels Python
+venv/
+.venv/
+
+# Ignorer les caches Python
+__pycache__/
+*.pyc
+
+# Ignorer le répertoire des modules Node.js si présent (même si projet Python, utile en cas de reste)
+node_modules/
+
+# Ignorer les fichiers et dossiers liés à Git
+.git/
+.gitignore
+
+# Ignorer les fichiers de build
+build/
+dist/
+*.egg-info/
+.coverage/
+
+# Ignorer les fichiers de cache de test ou de linter
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Ignorer les fichiers spécifiques aux IDEs courants
+.vscode/
+.idea/
+
+# Ignorer les fichiers d'environnement locaux
+.env
+*.env
+
+# Ignorer les fichiers de build ou de CI/CD qui ne sont pas nécessaires à l'exécution de l'app
+Makefile
+Jenkinsfile
+
+# Le fichier 'version' si ce n'est pas nécessaire à l'exécution
+# Si votre application lit ce fichier au runtime, NE L'IGNOREZ PAS
+version
