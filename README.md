@@ -1,8 +1,8 @@
 # Chatbot API FastAPI
 
-[![GitHub](https://img.shields.io/badge/GitHub-kybaloo%2Fchatbot-blue?logo=github)](https://github.com/kybaloo/chatbot)
+[![GitHub](https://img.shields.io/badge/GitHub-bradlab%2Fchatbot-blue?logo=github)](https://github.com/bradlab/chatbot)
 
-Une API de chatbot développée avec FastAPI, conçue pour être déployée sur AWS Lambda via Mangum. Ce projet est disponible sur [GitHub](https://github.com/kybaloo/chatbot).
+Une API de chatbot développée avec FastAPI, conçue pour être déployée sur AWS Lambda via Mangum. Ce projet est disponible sur [GitHub](https://github.com/bradlab/chatbot).
 
 ## 🌟 Fonctionnalités
 
@@ -36,7 +36,7 @@ Une API de chatbot développée avec FastAPI, conçue pour être déployée sur 
 
 1. Cloner le dépôt
    ```bash
-   git clone https://github.com/kybaloo/chatbot.git
+   git clone https://github.com/bradlab/chatbot.git
    cd chatbot
    ```
 
