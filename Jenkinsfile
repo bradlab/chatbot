@@ -1,7 +1,7 @@
 pipeline {
     agent any
 
-    options {
+    options{
         ansiColor('xterm')
     }
 
@@ -11,15 +11,14 @@ pipeline {
         // BOT_TOKEN = credentials('telegram-bot-token')
     }
 
-    stages {
+    stages{
         stage('Initialisation') {
             steps {
                 sh "echo Branch name ${BRANCH_NAME}"
                 sh "make venv && make install"
                 sh "test dev"
-            }
+           }
         }
-
 
         stage('Test Unitaire') {
             steps {
@@ -30,11 +29,11 @@ pipeline {
             }
         }
 
-        stage('Build') {
+         stage('Build') {
             steps {
                 script {
                     echo "Building the project..."
-                    // Add your build commands here
+                    
                 }
             }
         }
@@ -47,6 +46,11 @@ pipeline {
                 }
             }
         }
-    }
 
+        stage('Endpoint Test') {
+            steps{
+
+            }
+        }
+    }
 }
