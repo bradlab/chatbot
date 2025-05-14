@@ -1,16 +1,27 @@
-# This is a sample Python script.
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from mangum import Mangum
 
-# Press ⌃F5 to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press F9 to toggle the breakpoint.
+from .utils import Utils
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+@asynccontextmanager
+async def app_lifespan(application: FastAPI):
+    Utils.log_info("Starting the application")
+    yield
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+
+app = FastAPI(
+    title="Chatbot API",
+    description="Chatbot API description",
+    version="1.0.0",
+    lifespan=app_lifespan,
+)
+
+
+@app.get("/")
+async def root():
+    return {"msg": "Hello World"}
+
+
+handler = Mangum(app)
