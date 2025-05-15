@@ -1,4 +1,8 @@
 
+# by default, we settle down in this region
+AWS_REGION ?= eu-west-3
+AWS_PROFILE ?= "esgis_profile"
+
 clean:
 	rm -rf venv
 	rm -rf __pycache__
@@ -31,4 +35,3 @@ serve:
 test:
 	@echo "Running tests..."
 	venv/bin/pytest
-    
