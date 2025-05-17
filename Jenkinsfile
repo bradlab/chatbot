@@ -24,7 +24,7 @@ pipeline {
                 script {
                     withCredentials([file(credentialsId: 'matbradiouf-chatbot-env-file', variable: 'ENV_FILE')]) {
                         // Load the environment variables from the file
-                        sh "cat ${ENV_FILE} > .env"
+                        sh "cat $ENV_FILE >> .env"
                     }
                 }
             }
