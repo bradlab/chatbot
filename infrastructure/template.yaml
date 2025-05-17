@@ -9,8 +9,12 @@ Parameters:
     Description: Environment name for the application dev/staging/production
     Type: String
     AllowedValues:
-      - matbradiouf
-
+      - bradlab
+      - dev
+      - preprod
+      - prod
+      - bradlab_dev
+    Default: bradlab
 ###############################################################################
 Resources:
 ###############################################################################
