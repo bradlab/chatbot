@@ -13,6 +13,7 @@ Une API de chatbot développée avec FastAPI, conçue pour être déployée sur 
 - Conteneurisation avec Docker
 - Intégration CI/CD avec Jenkins
 - Gestion d'infrastructure via AWS CloudFormation
+- Déploiement automatisé à l’aide d’AWS SAM (Serverless Application Model)
 
 ## 🛠️ Technologies utilisées
 
