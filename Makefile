@@ -1,4 +1,8 @@
 
+# by default, we settle down in this region
+AWS_REGION ?= eu-west-3
+AWS_PROFILE ?= "esgis_profile"
+
 clean:
 	rm -rf venv
 	rm -rf __pycache__
@@ -26,9 +30,13 @@ deploy:
 
 
 serve:
-	.venv/bin/fastapi dev src/main.py
+	venv/bin/fastapi dev src/main.py
 
 test:
 	@echo "Running tests..."
 	venv/bin/pytest
-    
+
+test-endpoint:
+	@echo "Running endpoint tests..."
+	aws cloudformation describe-stacks --stack-name multi-stack-${env} --region ${AWS_REGION} \
+		--query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" --output text | xargs -I {} curl -X GET {}
