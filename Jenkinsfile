@@ -19,11 +19,13 @@ pipeline {
             }
         }
 
-        stage('Environment variable injection'){
+        stage('Environment variable injection') {
             steps {
-                script{
+                script {
                     withCredentials([file(credentialsId: 'matbradiouf-chatbot-env-file', variable: 'ENV_FILE')]) {
-                        sh "cat $ENV_FILE >> .env"
+                        // Load the environment variables from the file
+                        echo "Loading environment variables from ${ENV_FILE}"
+                        sh "cat ${ENV_FILE} > .env"
                     }
                 }
             }
