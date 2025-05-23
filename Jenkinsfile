@@ -22,7 +22,7 @@ pipeline {
         stage('Environment variable injection'){
             steps {
                 script{
-                    withCredentials([file(credentialsId: 'hervlokossou-chatbot-env-file', variable: 'ENV_FILE')]) {
+                    withCredentials([file(credentialsId: 'matbradiouf-chatbot-env-file', variable: 'ENV_FILE')]) {
                         sh "cat $ENV_FILE >> .env"
                     }
                 }
