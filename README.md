@@ -64,7 +64,10 @@ Une API de chatbot développée avec FastAPI, conçue pour être déployée sur 
 
 3. Installer les dépendances
    ```bash
+   # avec make
    make install
+   # avec pip
+   pip install -r requirements.txt
    ```
 
 4. Créer un fichier `.env` à la racine du projet avec les variables suivantes :
