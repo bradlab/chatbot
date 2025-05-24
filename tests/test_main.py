@@ -1,7 +1,28 @@
+import os
 from fastapi.testclient import TestClient
 import pytest
+from unittest.mock import patch
 
 from src.main import app
+
+@pytest.fixture(scope="module", autouse=True)
+def mock_env_vars():
+    """
+    Mocke les variables d'environnement requises par l'application.
+    Utilise scope="module" et autouse=True pour que le mocking s'applique
+    à tous les tests de ce module et soit setup/teardown une seule fois.
+    """
+    with patch.dict(
+        os.environ,
+        {
+            "TELEGRAM_BOT_TOKEN": "mock_telegram_token_for_tests",
+            "MISTRAL_API_KEY": "mock_mistral_api_key_for_tests",
+            "WEBHOOK_URL": "http://mock.webhook.url/webhook_for_tests"
+        }
+    ):
+        # Le 'yield' permet aux tests de s'exécuter.
+        # Les mocks sont automatiquement nettoyés après la fin de la fixture.
+        yield
 
 client = TestClient(app)
 
@@ -9,7 +30,7 @@ client = TestClient(app)
 def test_read_main():
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json() == {"msg": "Hello World"}
+    assert response.json() == {"msg": "Hello World. Welcome to KOZ API"}
     
 def test_read_prompt():
     response = client.get("/prompt")
