@@ -1,29 +1,27 @@
 import os
 from fastapi.testclient import TestClient
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 
-from src.main import app
+from src.config import Settings
 
-from src.config import get_settings, Settings
+@pytest.fixture(scope="module", autouse=True)
+def mock_env_vars():
+    """
+    Mocke les variables d'environnement requises par l'application.
+    Utilise scope="module" et autouse=True pour que le mocking s'applique
+    à tous les tests de ce module et soit setup/teardown une seule fois.
+    """
+    # Crée une instance mockée de Settings
+    mock_settings_instance = MagicMock(spec=Settings)
+    mock_settings_instance.TELEGRAM_BOT_TOKEN = "mock_telegram_token_for_tests"
+    mock_settings_instance.MISTRAL_API_KEY = "mock_mistral_api_key_for_tests"
+    mock_settings_instance.WEBHOOK_URL = "http://mock.webhook.url/webhook_for_tests"
+    mock_settings_instance.TELEGRAM_API_URL = "https://api.telegram.org" # Ajoutez toutes les vars nécessaires
 
-# @pytest.fixture(scope="module", autouse=True)
-# def mock_env_vars():
-#     """
-#     Mocke les variables d'environnement requises par l'application.
-#     Utilise scope="module" et autouse=True pour que le mocking s'applique
-#     à tous les tests de ce module et soit setup/teardown une seule fois.
-#     """
-#     # Crée une instance mockée de Settings
-#     mock_settings_instance = MagicMock(spec=Settings)
-#     mock_settings_instance.TELEGRAM_BOT_TOKEN = "mock_telegram_token_for_tests"
-#     mock_settings_instance.MISTRAL_API_KEY = "mock_mistral_api_key_for_tests"
-#     mock_settings_instance.WEBHOOK_URL = "http://mock.webhook.url/webhook_for_tests"
-#     mock_settings_instance.TELEGRAM_API_URL = "https://api.telegram.org" # Ajoutez toutes les vars nécessaires
-
-#     with patch('src.config.get_settings', return_value=mock_settings_instance):
-#         # Ici, en mockant get_settings, on contourne complètement la lecture du .env.
-#         yield
+    with patch('src.config.get_settings', return_value=mock_settings_instance):
+        # Ici, en mockant get_settings, on contourne complètement la lecture du .env.
+        yield
 
 @pytest.fixture(scope="module", autouse=True)
 def mock_telegram_handler_module():
@@ -38,10 +36,10 @@ def mock_telegram_handler_module():
 
     # Mocker les fonctions/objets que main.py importe depuis telegram_handler.py
     # Ces noms doivent correspondre exactement à ce qui est importé dans main.py
-    mock_handler.setup_ptb_handlers = MagicMock(return_value=None) # async function, so it will be awaited
-    mock_handler.configure_telegram_webhook = MagicMock(return_value=None) # async function
-    mock_handler.process_telegram_update = MagicMock(return_value=None) # async function
-    mock_handler.shutdown_ptb = MagicMock(return_value=None) # async function
+    mock_handler.setup_ptb_handlers = AsyncMock(return_value=None) # async function, so it will be awaited
+    mock_handler.configure_telegram_webhook = AsyncMock(return_value=None) # async function
+    mock_handler.process_telegram_update = AsyncMock(return_value=None) # async function
+    mock_handler.shutdown_ptb = AsyncMock(return_value=None) # async function
 
     with patch.dict('sys.modules', {'src.telegram_handler': mock_handler}):
         yield # L'application va maintenant importer notre mock_handler
@@ -55,13 +53,10 @@ def client():
     with TestClient(app) as c:
         yield c
 
-# client = TestClient(app)
-
-
-# def test_read_main(client):
-#     response = client.get("/")
-#     assert response.status_code == 200
-#     assert response.json() == {"msg": "Hello World. Welcome to KOZ API"}
+def test_read_main(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.json() == {"msg": "Hello World. Welcome to KOZ API"}
     
 def test_read_prompt(client):
     response = client.get("/prompt")
