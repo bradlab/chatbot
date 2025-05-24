@@ -7,23 +7,23 @@ from src.main import app
 
 from src.config import get_settings, Settings
 
-@pytest.fixture(scope="module", autouse=True)
-def mock_env_vars():
-    """
-    Mocke les variables d'environnement requises par l'application.
-    Utilise scope="module" et autouse=True pour que le mocking s'applique
-    à tous les tests de ce module et soit setup/teardown une seule fois.
-    """
-    # Crée une instance mockée de Settings
-    mock_settings_instance = MagicMock(spec=Settings)
-    mock_settings_instance.TELEGRAM_BOT_TOKEN = "mock_telegram_token_for_tests"
-    mock_settings_instance.MISTRAL_API_KEY = "mock_mistral_api_key_for_tests"
-    mock_settings_instance.WEBHOOK_URL = "http://mock.webhook.url/webhook_for_tests"
-    mock_settings_instance.TELEGRAM_API_URL = "https://api.telegram.org" # Ajoutez toutes les vars nécessaires
+# @pytest.fixture(scope="module", autouse=True)
+# def mock_env_vars():
+#     """
+#     Mocke les variables d'environnement requises par l'application.
+#     Utilise scope="module" et autouse=True pour que le mocking s'applique
+#     à tous les tests de ce module et soit setup/teardown une seule fois.
+#     """
+#     # Crée une instance mockée de Settings
+#     mock_settings_instance = MagicMock(spec=Settings)
+#     mock_settings_instance.TELEGRAM_BOT_TOKEN = "mock_telegram_token_for_tests"
+#     mock_settings_instance.MISTRAL_API_KEY = "mock_mistral_api_key_for_tests"
+#     mock_settings_instance.WEBHOOK_URL = "http://mock.webhook.url/webhook_for_tests"
+#     mock_settings_instance.TELEGRAM_API_URL = "https://api.telegram.org" # Ajoutez toutes les vars nécessaires
 
-    with patch('src.config.get_settings', return_value=mock_settings_instance):
-        # Ici, en mockant get_settings, on contourne complètement la lecture du .env.
-        yield
+#     with patch('src.config.get_settings', return_value=mock_settings_instance):
+#         # Ici, en mockant get_settings, on contourne complètement la lecture du .env.
+#         yield
 
 @pytest.fixture(scope="module", autouse=True)
 def mock_telegram_handler_module():
