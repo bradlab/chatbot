@@ -25,20 +25,50 @@ def mock_env_vars():
         # Ici, en mockant get_settings, on contourne complètement la lecture du .env.
         yield
 
-client = TestClient(app)
+@pytest.fixture(scope="module", autouse=True)
+def mock_telegram_handler_module():
+    """
+    Mocke complètement le module 'src.telegram_handler' pour éviter
+    son exécution réelle lors de l'importation de 'main.py'.
+    """
+    # Crée un mock pour le module telegram_handler.
+    # Nous pourrions ajouter des attributs ou méthodes mockés si main.py
+    # appelait des choses spécifiques du handler directement (ex: handler.process_update)
+    mock_handler = MagicMock()
+
+    # Mocker les fonctions/objets que main.py importe depuis telegram_handler.py
+    # Ces noms doivent correspondre exactement à ce qui est importé dans main.py
+    mock_handler.setup_ptb_handlers = MagicMock(return_value=None) # async function, so it will be awaited
+    mock_handler.configure_telegram_webhook = MagicMock(return_value=None) # async function
+    mock_handler.process_telegram_update = MagicMock(return_value=None) # async function
+    mock_handler.shutdown_ptb = MagicMock(return_value=None) # async function
+
+    with patch.dict('sys.modules', {'src.telegram_handler': mock_handler}):
+        yield # L'application va maintenant importer notre mock_handler
 
 
-def test_read_main():
+@pytest.fixture(scope="module")
+def client():
+    # C'est ici que src.main est importé, et donc src.telegram_handler
+    # sera importé comme notre mock_handler.
+    from src.main import app
+    with TestClient(app) as c:
+        yield c
+
+# client = TestClient(app)
+
+
+def test_read_main(client):
     response = client.get("/")
     assert response.status_code == 200
     assert response.json() == {"msg": "Hello World. Welcome to KOZ API"}
     
-def test_read_prompt():
+def test_read_prompt(client):
     response = client.get("/prompt")
     assert response.status_code == 404
     assert response.json() != {"msg": "Hello", "response": ""}
 
-def test_noread_prompt():
+def test_noread_prompt(client):
     response = client.get("/prompt")
     assert response.status_code == 404
     assert response.json() != {"msg": "Hola", "response": ""}
