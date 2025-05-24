@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     DYNAMO_TABLE: str = ""
     AWS_PROFILE: str = ""
     MISTRAL_API_KEY: str = ""
+    TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_API_URL: str = ""
+    WEBHOOK_URL: str = ""
 
     model_config = SettingsConfigDict(env_file=".env")
 

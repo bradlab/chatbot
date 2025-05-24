@@ -5,3 +5,4 @@ boto3
 mangum
 httpx
 mistralai
+python-telegram-bot

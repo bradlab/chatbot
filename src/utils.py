@@ -20,6 +20,13 @@ class Utils:
         Log a simple info message
         """
         logging.getLogger("uvicorn.error").info(msg=f"==> {message}")
+        
+    @staticmethod
+    def log_warning(message):
+        """_summary_
+        Log a simple warning message
+        """
+        logging.getLogger("uvicorn.error").warning(msg=f"==> {message}")
 
     @staticmethod
     def log_debug(message):
