@@ -3,28 +3,12 @@ from unittest.mock import AsyncMock, patch, MagicMock
 import os
 import datetime
 
-# Importez les fonctions que vous voulez tester
-from src.telegram_handler import (
-    ptb_app,
-)
-
-# Importez l'instance de dépôt DynamoDB
-from src.dynamodb_repository import dynamodb_repo # IMPORTANT
-
-# Importez la classe Settings et get_settings de votre module config
-from src.config import Settings, get_settings
-
-
 # --- Fixtures Pytest pour le Mocking ---
 
 @pytest.fixture(scope="module", autouse=True)
 def mock_env_vars():
-    """
-    Mocke les variables d'environnement requises par l'application.
-    Utilise scope="module" et autouse=True pour que le mocking s'applique
-    à tous les tests de ce module et soit setup/teardown une seule fois.
-    """
-    # Crée une instance mockée de Settings
+    # Import ici pour garantir que le patch est effectif avant toute utilisation
+    from src.config import Settings
     mock_settings_instance = MagicMock(spec=Settings)
     mock_settings_instance.TELEGRAM_BOT_TOKEN = "mock_telegram_token_for_tests"
     mock_settings_instance.MISTRAL_API_KEY = "mock_mistral_api_key_for_tests"
@@ -34,6 +18,17 @@ def mock_env_vars():
     with patch('src.config.get_settings', return_value=mock_settings_instance):
         # Ici, en mockant get_settings, on contourne complètement la lecture du .env.
         yield
+
+@pytest.fixture
+def ptb_app():
+    # Import après le mock
+    from src.telegram_handler import ptb_app as real_ptb_app
+    return real_ptb_app
+
+@pytest.fixture
+def dynamodb_repo():
+    from src.dynamodb_repository import dynamodb_repo as real_dynamodb_repo
+    return real_dynamodb_repo
 
 @pytest.fixture
 def mock_update():
@@ -53,7 +48,7 @@ def mock_context():
     return context
 
 @pytest.fixture(autouse=True)
-def mock_telegram_bot_methods():
+def mock_telegram_bot_methods(ptb_app):
     with patch.object(ptb_app, 'bot', new_callable=AsyncMock) as mock_bot:
         mock_bot.send_message = AsyncMock()
         mock_bot.set_webhook = AsyncMock()
@@ -73,7 +68,7 @@ def mock_mistral_client():
         yield mock_instance
 
 @pytest.fixture(autouse=True)
-def mock_dynamodb_repository_save_message():
+def mock_dynamodb_repository_save_message(dynamodb_repo):
     """
     Mocke la méthode save_message du dépôt DynamoDB.
     """
