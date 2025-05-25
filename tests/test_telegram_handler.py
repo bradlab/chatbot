@@ -18,24 +18,22 @@ from src.config import Settings, get_settings
 # --- Fixtures Pytest pour le Mocking ---
 
 @pytest.fixture(scope="module", autouse=True)
-def mock_pydantic_settings_class():
+def mock_env_vars():
     """
-    Mocke la classe Settings de pydantic-settings pour contrôler les variables
-    d'environnement lors des tests d'intégration.
+    Mocke les variables d'environnement requises par l'application.
+    Utilise scope="module" et autouse=True pour que le mocking s'applique
+    à tous les tests de ce module et soit setup/teardown une seule fois.
     """
+    # Crée une instance mockée de Settings
     mock_settings_instance = MagicMock(spec=Settings)
     mock_settings_instance.TELEGRAM_BOT_TOKEN = "mock_telegram_token_for_tests"
     mock_settings_instance.MISTRAL_API_KEY = "mock_mistral_api_key_for_tests"
     mock_settings_instance.WEBHOOK_URL = "http://mock.webhook.url/webhook_for_tests"
-    mock_settings_instance.TELEGRAM_API_URL = "https://api.telegram.org"
-    mock_settings_instance.AWS_REGION_NAME = "mock_aws_region"
-    mock_settings_instance.DYNAMO_TABLE = "mock_dynamo_table"
-    mock_settings_instance.AWS_PROFILE = "mock_aws_profile"
-    mock_settings_instance.ENV_NAME = "test"
+    mock_settings_instance.TELEGRAM_API_URL = "https://api.telegram.org" # Ajoutez toutes les vars nécessaires
 
-    with patch('src.config.Settings', return_value=mock_settings_instance):
-        with patch('src.config.get_settings', return_value=mock_settings_instance):
-            yield
+    with patch('src.config.get_settings', return_value=mock_settings_instance):
+        # Ici, en mockant get_settings, on contourne complètement la lecture du .env.
+        yield
 
 @pytest.fixture
 def mock_update():
@@ -65,8 +63,8 @@ def mock_telegram_bot_methods():
 
 @pytest.fixture(autouse=True)
 def mock_mistral_client():
-    with patch('src.telegram_handler.MistralClient', new_callable=MagicMock) as MockMistralClient:
-        mock_instance = MockMistralClient.return_value
+    with patch('src.telegram_handler.Mistral', new_callable=MagicMock) as MockMistral:
+        mock_instance = MockMistral.return_value
         mock_instance.chat = AsyncMock()
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
