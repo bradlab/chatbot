@@ -1,10 +1,13 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from mangum import Mangum
-import json, boto3
+import datetime
 from mistralai import Mistral
 import asyncio
+
+from .dynamodb_repository import dynamodb_repo
+
 
 # Importe les fonctions de traitement Telegram
 from .telegram_handler import (
@@ -88,9 +91,8 @@ async def chat(question: str):
     Utils.insert_data(response)
     return response
 
-@app.post("/webhook")
+@app.post("/webhook", description="Endpoint pour recevoir les mises à jour ou changement dans le bot Telegram")
 async def telegram_webhook(request: Request):
-    #Endpoint pour recevoir les mises à jour de Telegram
     try:
         update_json = await request.json()
         await process_telegram_update(update_json)
@@ -98,6 +100,34 @@ async def telegram_webhook(request: Request):
     except Exception as e:
         Utils.log_error(f"Erreur de traitement du webhook: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/chat-history/{chat_id}", description="Endpoint pour récupérer l'historique d'une discussion.")
+async def get_chat_history_endpoint(chat_id: int, limit: int = 100):
+    history = await dynamodb_repo.get_chat_history(chat_id, limit)
+    if not history:
+        raise HTTPException(status_code=404, detail="Historique de chat non trouvé ou erreur.")
+    return {"chat_id": chat_id, "history": history}
+
+@app.get("/user-messages/{user_id}", description="Récupère tous les messages d'un utilisateur spécifique dans une plage de dates.")
+async def get_user_messages_endpoint(
+    user_id: int,
+    start_date: str = Query(..., description="Date de début (YYYY-MM-DD)"),
+    end_date: str = Query(..., description="Date de fin (YYYY-MM-DD)"),
+    limit: int = 100
+):
+    try:
+        # Convertir les dates en timestamps ISO 8601 pour la requête DynamoDB
+        start_timestamp = datetime.datetime.strptime(start_date, "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc).isoformat()
+        end_timestamp = datetime.datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=datetime.timezone.utc).isoformat()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Format de date invalide. Utilisez YYYY-MM-DD.")
+
+    messages = await dynamodb_repo.get_user_messages_by_date_range(user_id, start_timestamp, end_timestamp, limit)
+    if not messages:
+        err_msg = f"Aucun message trouvé pour l'utilisateur {user_id} entre {start_date} et {end_date}."
+        Utils.log_error(err_msg)
+        raise HTTPException(status_code=404, detail=err_msg)
+    return {"user_id": user_id, "messages": messages}
 
 async def chats():
     # Get al chats here
