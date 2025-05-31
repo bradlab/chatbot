@@ -23,7 +23,7 @@ Resources:
       TableName: !Sub "chatbot-dbtable-${EnvironmentName}"
       # Définition des attributs utilisés comme clés pour la table principale et les GSI
       AttributeDefinitions:
-        - AttributeName: "chat_id"
+        - AttributeName: "id"
           AttributeType: "S"
         - AttributeName: "timestamp"
           AttributeType: "S"
@@ -31,7 +31,7 @@ Resources:
           AttributeType: "S"
       # Schéma de la clé primaire de la table principale
       KeySchema:
-        - AttributeName: "chat_id"
+        - AttributeName: "id"
           KeyType: "HASH"
         - AttributeName: "timestamp"
           KeyType: "RANGE"
@@ -51,7 +51,7 @@ Resources:
           Projection:
             ProjectionType: "INCLUDE"
             NonKeyAttributes: # Attributs à projeter en plus des clés de l'index et de la table
-              - "chat_id"
+              - "id"
               - "message_id"
               - "role"
               - "text"
