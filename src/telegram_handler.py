@@ -36,7 +36,7 @@ async def start_command(update: Update, context):
     response_text = f"Bonjour {user_name} ! Je suis Koz votre bot intelligent de causerie. Posez-moi une question !"
     await update.message.reply_text()
     bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
-    await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, "bot", response_text)
+    await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, response_text, "bot")
     
 
 async def handle_message(update: Update, context):
@@ -50,7 +50,7 @@ async def handle_message(update: Update, context):
             user_name = user.full_name or user.username or "N/A"
             
             # Enregistrer le message utilisateur via le repository
-            await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, "user", user_message)
+            await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
 
             try:
                 chat_response = mistral_client.chat.complete(
@@ -71,8 +71,8 @@ async def handle_message(update: Update, context):
                     bot_message.message_id, 
                     ptb_app.bot.id, 
                     ptb_app.bot.username, 
+                    response_text,
                     "bot", 
-                    response_text, 
                     MISTRAL_MODEL
                 )
             except Exception as e:
@@ -80,7 +80,7 @@ async def handle_message(update: Update, context):
                 error_response = "Désolé, une erreur est survenue lors du traitement de votre demande."
                 # Enregistrer le message d'erreur du bot via le dépôt
                 bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=error_response)
-                await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, "bot", error_response)
+                await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, error_response, "bot")
     except Exception as e:
         Utils.log_error("Traitement du message échoué.")
 

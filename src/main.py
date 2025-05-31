@@ -78,7 +78,7 @@ async def chat(question: str):
     )
     Utils.log_info(chat_response)
     response = {
-        "id": {
+        "chat_id": {
             "S": f"{chat_response.id}",
         },
         "question": {
@@ -89,15 +89,6 @@ async def chat(question: str):
         }
     }
     Utils.insert_data(response)
-    await dynamodb_repo.save_message(
-        "7d6d6416cff4477082d884dbc1d50254", 
-        "7d6d6416cff4477082d884dbc1d51293", 
-        "mybot_id1354", 
-        "toto_machin",
-        "user",
-        chat_response.choices[0].message.content,
-        "mistral-large-latest"
-    )
     return response
 
 @app.post("/webhook", description="Endpoint pour recevoir les mises à jour ou changement dans le bot Telegram")

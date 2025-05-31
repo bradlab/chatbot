@@ -46,7 +46,7 @@ class DynamoDBRepository:
         try:
                 
             item = {
-                'id': str(chat_id),
+                'chat_id': str(chat_id),
                 'timestamp': datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 'message_id': str(message_id),
                 'user_id': str(user_id),
@@ -72,7 +72,7 @@ class DynamoDBRepository:
         try:
             response = await asyncio.to_thread(
                 self.table.query,
-                KeyConditionExpression=Key('id').eq(str(chat_id)),
+                KeyConditionExpression=Key('chat_id').eq(str(chat_id)),
                 Limit=limit,
                 ScanIndexForward=True # True pour tri ascendant (du plus ancien au plus récent)
             )
