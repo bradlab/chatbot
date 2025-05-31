@@ -10,8 +10,8 @@ api_key = env_vars.MISTRAL_API_KEY
 # Récupérer les jetons depuis les variables d'environnement
 TELEGRAM_BOT_TOKEN = env_vars.TELEGRAM_BOT_TOKEN
 MISTRAL_API_KEY = env_vars.MISTRAL_API_KEY
-API_WEBHOOK_URL = f"{env_vars.TELEGRAM_API_URL}/setWebhook?url={env_vars.WEBHOOK_URL}" 
-# API_WEBHOOK_URL = env_vars.WEBHOOK_URL
+# API_WEBHOOK_URL = f"{env_vars.TELEGRAM_API_URL}/setWebhook?url={env_vars.WEBHOOK_URL}" 
+API_WEBHOOK_URL = env_vars.WEBHOOK_URL
 MISTRAL_MODEL = "mistral-large-latest"
 
 if not TELEGRAM_BOT_TOKEN:
@@ -66,7 +66,15 @@ async def handle_message(update: Update, context):
                 response_text = chat_response.choices[0].message.content
                 bot_message  = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
                 # Enregistrer la reponse du bot
-                await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, "bot", response_text, MISTRAL_MODEL)
+                await dynamodb_repo.save_message(
+                    chat_id, 
+                    bot_message.message_id, 
+                    ptb_app.bot.id, 
+                    ptb_app.bot.username, 
+                    "bot", 
+                    response_text, 
+                    MISTRAL_MODEL
+                )
             except Exception as e:
                 Utils.log_info(f"Erreur lors de l'interaction avec MistralAI ou Telegram: {e}")
                 error_response = "Désolé, une erreur est survenue lors du traitement de votre demande."
@@ -96,6 +104,7 @@ async def configure_telegram_webhook():
     try:
         await bot.set_webhook(url=API_WEBHOOK_URL)
         Utils.log_info(f"Webhook Telegram configuré sur : {env_vars.WEBHOOK_URL}")
+        Utils.log_info(f"Webhook Telegram API : {API_WEBHOOK_URL}")
     except Exception as e:
         Utils.log_error(f"Erreur lors de la configuration du webhook Telegram : {e}")
 

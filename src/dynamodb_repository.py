@@ -30,20 +30,29 @@ class DynamoDBRepository:
             self._table = dynamodb.Table(self.table_name)
         return self._table
 
-    async def save_message(self, chat_id: int, message_id: int, user_id: int, user_name: str, role: str, text: str, ai_model: str = None):
+    async def save_message(
+        self, 
+        chat_id: int, 
+        message_id: int, 
+        user_id: int, 
+        user_name: str, 
+        text: str, 
+        role: str, 
+        ai_model: str = None
+    ):
         """
         Sauvegarde un message (utilisateur ou bot) dans la table DynamoDB.
         """
         try:
                 
             item = {
-                'chat_id': str(chat_id),
+                'id': str(chat_id),
                 'timestamp': datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 'message_id': str(message_id),
                 'user_id': str(user_id),
                 'user_name': user_name,
+                'text': text,
                 'role': role,
-                'text': text
             }
             if ai_model:
                 item['ai_model'] = ai_model
@@ -63,7 +72,7 @@ class DynamoDBRepository:
         try:
             response = await asyncio.to_thread(
                 self.table.query,
-                KeyConditionExpression=Key('chat_id').eq(str(chat_id)),
+                KeyConditionExpression=Key('id').eq(str(chat_id)),
                 Limit=limit,
                 ScanIndexForward=True # True pour tri ascendant (du plus ancien au plus récent)
             )
