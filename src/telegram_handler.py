@@ -1,8 +1,8 @@
 from telegram import Update, Bot
 from telegram.ext import Application, MessageHandler, filters, CommandHandler
 from mistralai import Mistral
-from mistralai import Mistral
 
+from .dynamodb_repository import dynamodb_repo
 from .config import env_vars
 from .utils import Utils
 
@@ -10,7 +10,8 @@ api_key = env_vars.MISTRAL_API_KEY
 # Récupérer les jetons depuis les variables d'environnement
 TELEGRAM_BOT_TOKEN = env_vars.TELEGRAM_BOT_TOKEN
 MISTRAL_API_KEY = env_vars.MISTRAL_API_KEY
-API_WEBHOOK_URL = f"{env_vars.TELEGRAM_API_URL}/setWebhook?url={env_vars.WEBHOOK_URL}" 
+# API_WEBHOOK_URL = f"{env_vars.TELEGRAM_API_URL}/setWebhook?url={env_vars.WEBHOOK_URL}" 
+API_WEBHOOK_URL = env_vars.WEBHOOK_URL
 MISTRAL_MODEL = "mistral-large-latest"
 
 if not TELEGRAM_BOT_TOKEN:
@@ -26,48 +27,72 @@ ptb_app = Application.builder().token(TELEGRAM_BOT_TOKEN).updater(None).build()
 
 async def start_command(update: Update, context):
     # Gère la commande /start.
-    await update.message.reply_text("Bonjour ! Je suis votre bot intelligent. Posez-moi une question !")
+    user = update.message.from_user
+    user_message = update.message.text
+    chat_id = update.message.chat_id
+    message_id = update.message.message_id
+    user_name = user.full_name or user.username or "N/A"
+    await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, "user", user_message)
+    response_text = f"Bonjour {user_name} ! Je suis Koz votre bot intelligent de causerie. Posez-moi une question !"
+    await update.message.reply_text()
+    bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
+    await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, "bot", response_text)
+    
 
 async def handle_message(update: Update, context):
     # Traite tous les messages texte et utilise MistralAI pour répondre.
-    if update.message and update.message.text:
-        user_message = update.message.text
-        chat_id = update.message.chat_id
+    try:
+        if update.message and update.message.text:
+            user = update.message.from_user
+            user_message = update.message.text
+            chat_id = update.message.chat_id
+            message_id = update.message.message_id
+            user_name = user.full_name or user.username or "N/A"
+            
+            # Enregistrer le message utilisateur via le repository
+            await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, "user", user_message)
 
-        try:
-            chat_response = mistral_client.chat.complete(
-                model=MISTRAL_MODEL,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": user_message,
-                    },
-                ]
-            )
-            # response = {
-            #     "id": {
-            #         "S": f"{chat_response.id}",
-            #     },
-            #     "question": {
-            #         "S": f"{user_message}",
-            #     },
-            #     "answer": {
-            #         "S": f"{chat_response.choices[0].message.content}",
-            #     }
-            # }
-            
-            
-            await ptb_app.bot.send_message(chat_id=chat_id, text=chat_response.choices[0].message.content)
-        except Exception as e:
-            Utils.log_info(f"Erreur lors de l'interaction avec MistralAI ou Telegram: {e}")
-            await ptb_app.bot.send_message(chat_id=chat_id, text="Désolé, une erreur est survenue lors du traitement de votre demande.")
+            try:
+                chat_response = mistral_client.chat.complete(
+                    model=MISTRAL_MODEL,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": user_message,
+                        },
+                    ]
+                )
+                
+                response_text = chat_response.choices[0].message.content
+                bot_message  = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
+                # Enregistrer la reponse du bot
+                await dynamodb_repo.save_message(
+                    chat_id, 
+                    bot_message.message_id, 
+                    ptb_app.bot.id, 
+                    ptb_app.bot.username, 
+                    "bot", 
+                    response_text, 
+                    MISTRAL_MODEL
+                )
+            except Exception as e:
+                Utils.log_info(f"Erreur lors de l'interaction avec MistralAI ou Telegram: {e}")
+                error_response = "Désolé, une erreur est survenue lors du traitement de votre demande."
+                # Enregistrer le message d'erreur du bot via le dépôt
+                bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=error_response)
+                await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, "bot", error_response)
+    except Exception as e:
+        Utils.log_error("Traitement du message échoué.")
 
 async def setup_ptb_handlers():
-    # Configure les handlers de l'application Python-Telegram-Bot
-    ptb_app.add_handler(CommandHandler("start", start_command))
-    ptb_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    await ptb_app.initialize()
-    Utils.log_info("Handlers Telegram initialisés.")
+    try:
+        # Configure les handlers de l'application Python-Telegram-Bot
+        ptb_app.add_handler(CommandHandler("start", start_command))
+        ptb_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+        await ptb_app.initialize()
+        Utils.log_info("Handlers Telegram initialisés.")
+    except Exception as e:
+        Utils.log_error(f"Erreur lors de la configuration des handlers Telegram : {e}")
 
 async def configure_telegram_webhook():
     # Configure le webhook Telegram avec l'URL définie.
@@ -79,6 +104,7 @@ async def configure_telegram_webhook():
     try:
         await bot.set_webhook(url=API_WEBHOOK_URL)
         Utils.log_info(f"Webhook Telegram configuré sur : {env_vars.WEBHOOK_URL}")
+        Utils.log_info(f"Webhook Telegram API : {API_WEBHOOK_URL}")
     except Exception as e:
         Utils.log_error(f"Erreur lors de la configuration du webhook Telegram : {e}")
 

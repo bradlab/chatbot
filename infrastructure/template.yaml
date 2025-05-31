@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
-Description: AWS CloudFormation Template for the Application
+Description: AWS CloudFormation Template for KOZ API
 
 ###############################################################################
 Parameters:
@@ -21,15 +21,44 @@ Resources:
     Type: "AWS::DynamoDB::Table"
     Properties:
       TableName: !Sub "chatbot-dbtable-${EnvironmentName}"
+      # Définition des attributs utilisés comme clés pour la table principale et les GSI
       AttributeDefinitions:
         - AttributeName: "id"
           AttributeType: "S"
+        - AttributeName: "timestamp"
+          AttributeType: "S"
+        - AttributeName: "user_id" # Attribut nécessaire pour UserIndex
+          AttributeType: "S"
+      # Schéma de la clé primaire de la table principale
       KeySchema:
         - AttributeName: "id"
           KeyType: "HASH"
+        - AttributeName: "timestamp"
+          KeyType: "RANGE"
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
+      
+      # --- Global Secondary Indexes (GSI) ---
+      GlobalSecondaryIndexes:
+        # GSI 1: UserIndex (pour les messages d'un utilisateur)
+        - IndexName: "UserIndex"
+          KeySchema:
+            - AttributeName: "user_id"
+              KeyType: "HASH"
+            - AttributeName: "timestamp"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: "INCLUDE"
+            NonKeyAttributes: # Attributs à projeter en plus des clés de l'index et de la table
+              - "id"
+              - "message_id"
+              - "role"
+              - "text"
+              - "user_name"
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
 
   Function:
     Type: AWS::Serverless::Function

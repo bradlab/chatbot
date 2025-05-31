@@ -56,7 +56,7 @@ Une API de chatbot développée avec FastAPI, conçue pour être déployée sur 
    ```bash
    # Sur Windows
    python -m venv .venv
-   .venv\Scripts\activate
+   .venv/Scripts/activate
    
    # Sur Unix
    python3 -m venv .venv
