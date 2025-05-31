@@ -53,6 +53,14 @@ pipeline {
         }
 
         stage('Deploy') {
+            when {
+                anyOf {
+                    branch 'matbradiouf'
+                    branch 'dev'
+                    branch 'preprod'
+                    branch 'prod'
+                }
+            }
             steps {
                 script {
                     // Add your deployment commands here
@@ -63,6 +71,14 @@ pipeline {
         }
 
         stage('Test endpoint'){
+            when {
+                anyOf {
+                    branch 'matbradiouf'
+                    branch 'dev'
+                    branch 'preprod'
+                    branch 'prod'
+                }
+            }
             steps {
                 script {
                     // Add your endpoint testing commands here
