@@ -2,6 +2,10 @@ from fastapi import FastAPI, Request, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from mangum import Mangum
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 import datetime
 from mistralai import Mistral
 import asyncio
@@ -25,7 +29,6 @@ from .utils import Utils
 api_key = env_vars.MISTRAL_API_KEY
 model = "mistral-small-latest"
 client = Mistral(api_key=api_key)
-
 
 
 @asynccontextmanager
@@ -54,6 +57,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Initialise le rate limiter (par IP)
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
+@app.middleware("http")
+@limiter.limit("100/minute")
+async def global_rate_limit(request: Request, call_next):
+    return await call_next(request)
 
 
 @app.get("/")

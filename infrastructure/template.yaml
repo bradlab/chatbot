@@ -23,22 +23,22 @@ Parameters:
   DynamoTable:
     Description: Name of the DynamoDB table used to persist chatbot conversations
     Type: String
-    # NoEcho: true
+    NoEcho: true
   AwsProfile:
     Description: AWS CLI profile name used for deployment (for local/devops usage)
     Type: String
-    Default: bradlab_profile
+    Default: esgis_profile
   MistralApiKey:
     Description: API key for accessing the Mistral AI service
     Type: String
-    # NoEcho: true
+    NoEcho: true
   TelegramBotToken:
     Description: Telegram bot token for authenticating with the Telegram API
     Type: String
-    # NoEcho: true
+    NoEcho: true
   ApiWehookUrl:
     Type: String
-    # NoEcho: true
+    NoEcho: true
   TelegramApiBotUrl:
     Type: String
     Default: https://api.telegram.org/bot
