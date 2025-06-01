@@ -67,19 +67,17 @@ Resources:
       CodeUri: ../
       Handler: src/main.handler
       Runtime: python3.12
-      Environment:
-        Variables:
-          ENV_NAME: brad_test
-          AWS_REGION_NAME: eu-west-3
-          DYNAMO_TABLE: chatbot-dbtable-bradlab
-          AWS_PROFILE: bradlab_profile
-          TELEGRAM_BOT_TOKEN: 7916941219:AAGUKhpi9FHA-Iv-6PeGui9P_Bbq1uSC37c
-          TELEGRAM_API_URL: https://api.telegram.org/bot
-          # WEBHOOK_URL: !Sub ${TELEGRAM_API_URL}/setWebhook?url=https://${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}/webhook
-          # WEBHOOK_URL: !Sub "https://${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}/webhook"
-          WEBHOOK_URL: !Sub "https://p48s0cupm7.execute-api.eu-west-3.amazonaws.com/webhook"
+      # Environment:
+        # Variables:
+          # ENV_NAME: brad_test
+          # AWS_REGION_NAME: eu-west-3
+          # DYNAMO_TABLE: chatbot-dbtable-bradlab
+          # AWS_PROFILE: bradlab_profile
+          # TELEGRAM_BOT_TOKEN: 7916941219:AAGUKhpi9FHA-Iv-6PeGui9P_Bbq1uSC37c
+          # TELEGRAM_API_URL: https://api.telegram.org/bot
+          # WEBHOOK_URL: !Sub "https://p48s0cupm7.execute-api.eu-west-3.amazonaws.com/webhook"
           # Secrets injectés dynamiquement
-          MISTRAL_API_KEY: w5pOu152w1ydl9m22ZGR9gnLAskQ4FwQ
+          # MISTRAL_API_KEY: w5pOu152w1ydl9m22ZGR9gnLAskQ4FwQ
       Events:
         Api:
           Type: HttpApi
