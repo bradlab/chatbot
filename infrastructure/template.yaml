@@ -67,6 +67,18 @@ Resources:
       CodeUri: ../
       Handler: src/main.handler
       Runtime: python3.12
+      Environment:
+        Variables:
+          ENV_NAME: brad_test
+          AWS_REGION_NAME: eu-west-3
+          DYNAMO_TABLE: chatbot-dbtable-bradlab
+          AWS_PROFILE: bradlab_profile
+          # TELEGRAM_BOT_TOKEN: '{{resolve:secretsmanager:chatbot-secrets:SecretString:TELEGRAM_BOT_TOKEN}}'
+          TELEGRAM_API_URL: https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}
+          WEBHOOK_URL: !Sub ${TELEGRAM_API_URL}/setWebhook?url=https://${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}/webhook
+          # WEBHOOK_URL: !Sub "https://${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}/webhook"
+          # Secrets injectés dynamiquement
+          # MISTRAL_API_KEY: '{{resolve:secretsmanager:chatbot-secrets:SecretString:MISTRAL_API_KEY}}'
       Events:
         Api:
           Type: HttpApi
