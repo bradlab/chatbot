@@ -10,8 +10,8 @@ api_key = env_vars.MISTRAL_API_KEY
 # Récupérer les jetons depuis les variables d'environnement
 TELEGRAM_BOT_TOKEN = env_vars.TELEGRAM_BOT_TOKEN
 MISTRAL_API_KEY = env_vars.MISTRAL_API_KEY
-# API_WEBHOOK_URL = f"{env_vars.TELEGRAM_API_URL}/setWebhook?url={env_vars.WEBHOOK_URL}" 
-API_WEBHOOK_URL = env_vars.WEBHOOK_URL
+API_WEBHOOK_URL = f"{env_vars.TELEGRAM_API_URL}{TELEGRAM_BOT_TOKEN}/setWebhook?url={env_vars.WEBHOOK_URL}" 
+# API_WEBHOOK_URL = env_vars.WEBHOOK_URL
 MISTRAL_MODEL = "mistral-large-latest"
 
 if not TELEGRAM_BOT_TOKEN:
