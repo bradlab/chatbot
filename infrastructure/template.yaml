@@ -38,7 +38,7 @@ Parameters:
     NoEcho: true
   ApiWehookUrl:
     Type: String
-    Default: !Sub "https://${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}/webhook"
+    NoEcho: true
   TelegramApiBotUrl:
     Type: String
     Default: https://api.telegram.org/bot
@@ -125,8 +125,8 @@ Resources:
       Events:
         Api:
           Type: HttpApi
-          # Properties:
-            # ApiId: !Ref Api
+          Properties:
+            ApiId: !Ref Api
 
   Api:
     Type: AWS::Serverless::HttpApi
