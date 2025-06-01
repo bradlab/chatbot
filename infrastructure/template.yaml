@@ -104,6 +104,24 @@ Resources:
           TELEGRAM_BOT_TOKEN: !Ref TelegramBotToken
           TELEGRAM_API_URL: !Ref TelegramApiBotUrl
           WEBHOOK_URL: !Ref ApiWehookUrl
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:DeleteItem
+                - dynamodb:PutItem
+                - dynamodb:Query
+                - dynamodb:UpdateItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:BatchGetItem
+                - dynamodb:DescribeTable
+                - dynamodb:ConditionCheckItem
+              Resource:
+                - !GetAtt DynamoDBTable.Arn
+                - !Sub "${DynamoDBTable.Arn}/index/*"
       Events:
         Api:
           Type: HttpApi
