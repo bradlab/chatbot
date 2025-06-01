@@ -22,7 +22,7 @@ pipeline {
         stage('Environment variable injection') {
             steps {
                 script {
-                    withCredentials([file(credentialsId: 'matbradiouf-chatbot-env-file', variable: 'ENV_FILE')]) {
+                    withCredentials([file(credentialsId: 'bradlab-chatbot-env-file', variable: 'ENV_FILE')]) {
                         // Load the environment variables from the file
                         echo "Loading environment variables from ${ENV_FILE}"
                         sh "cat ${ENV_FILE} > .env"
@@ -55,7 +55,7 @@ pipeline {
         stage('Deploy') {
             when {
                 anyOf {
-                    branch 'matbradiouf'
+                    branch 'bradlab'
                     branch 'dev'
                     branch 'preprod'
                     branch 'prod'
@@ -73,7 +73,7 @@ pipeline {
         stage('Test endpoint'){
             when {
                 anyOf {
-                    branch 'matbradiouf'
+                    branch 'bradlab'
                     branch 'dev'
                     branch 'preprod'
                     branch 'prod'
