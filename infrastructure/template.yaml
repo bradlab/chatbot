@@ -38,7 +38,7 @@ Parameters:
     NoEcho: true
   ApiWehookUrl:
     Type: String
-    NoEcho: true
+    Default: https://p48s0cupm7.execute-api.eu-west-3.amazonaws.com/webhook
   TelegramApiBotUrl:
     Type: String
     Default: https://api.telegram.org/bot
@@ -103,25 +103,7 @@ Resources:
           MISTRAL_API_KEY: !Ref MistralApiKey
           TELEGRAM_BOT_TOKEN: !Ref TelegramBotToken
           TELEGRAM_API_URL: !Ref TelegramApiBotUrl
-          WEBHOOK_URL: !Ref ApiWehookUrl
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref DynamoDBTable
-        - Statement:
-            - Effect: Allow
-              Action:
-                - dynamodb:GetItem
-                - dynamodb:DeleteItem
-                - dynamodb:PutItem
-                - dynamodb:Query
-                - dynamodb:UpdateItem
-                - dynamodb:BatchWriteItem
-                - dynamodb:BatchGetItem
-                - dynamodb:DescribeTable
-                - dynamodb:ConditionCheckItem
-              Resource:
-                - !GetAtt DynamoDBTable.Arn
-                - !Sub "${DynamoDBTable.Arn}/index/*"
+          WEBHOOK_URL:  !Ref ApiWehookUrl # Je veux qu'il soit construit à partir de l'url de l'api après déploiement. Format : https://api.domain.com/webhook
       Events:
         Api:
           Type: HttpApi
@@ -141,3 +123,7 @@ Outputs:
     Description: URL of your API
     Value:
       Fn::Sub: 'https://${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}/'
+  WebhookUrl:
+    Description: Full Telegram webhook URL
+    Value:
+      Fn::Sub: "https://${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}/webhook"
