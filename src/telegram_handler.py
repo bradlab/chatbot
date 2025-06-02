@@ -53,17 +53,26 @@ async def handle_message(update: Update, context):
 
             try:
                 # Timeout de 5 secondes sur l'appel à MistralAI
-                chat_response = await asyncio.wait_for(
-                    mistral_client.chat.complete(
-                        model=MISTRAL_MODEL,
-                        messages=[
-                            {
-                                "role": "user",
-                                "content": user_message,
-                            },
-                        ]
-                    ),
-                    timeout=60  # secondes
+                # chat_response = await asyncio.wait_for(
+                #     mistral_client.chat.complete(
+                #         model=MISTRAL_MODEL,
+                #         messages=[
+                #             {
+                #                 "role": "user",
+                #                 "content": user_message,
+                #             },
+                #         ]
+                #     ),
+                #     timeout=60  # secondes
+                # )
+                chat_response = mistral_client.chat.complete(
+                    model=MISTRAL_MODEL,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": user_message,
+                        },
+                    ]
                 )
                 response_text = chat_response.choices[0].message.content
                 bot_message  = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
@@ -76,10 +85,10 @@ async def handle_message(update: Update, context):
                     "bot", 
                     MISTRAL_MODEL
                 )
-            except asyncio.TimeoutError:
-                error_response = "⏱️ Le service met trop de temps à répondre, veuillez réessayer plus tard."
-                bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=error_response)
-                await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, error_response, "bot")
+            # except asyncio.TimeoutError:
+            #     error_response = "⏱️ Le service met trop de temps à répondre, veuillez réessayer plus tard."
+            #     bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=error_response)
+            #     await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, error_response, "bot")
             except Exception as e:
                 Utils.log_info(f"Erreur lors de l'interaction avec MistralAI ou Telegram: {e}")
                 error_response = "Désolé, une erreur est survenue lors du traitement de votre demande."
