@@ -98,16 +98,18 @@ async def setup_ptb_handlers():
         Utils.log_error(f"Erreur lors de la configuration des handlers Telegram : {e}")
 
 async def configure_telegram_webhook():
-    # Configure le webhook Telegram avec l'URL définie.
     if not API_WEBHOOK_URL:
         Utils.log_error("WEBHOOK_URL non défini. Le webhook ne sera pas configuré automatiquement.")
         return
 
     bot = Bot(TELEGRAM_BOT_TOKEN)
     try:
-        await bot.set_webhook(url=API_WEBHOOK_URL)
-        Utils.log_info(f"Webhook Telegram configuré sur : {env_vars.WEBHOOK_URL}")
-        Utils.log_info(f"Webhook Telegram API : {API_WEBHOOK_URL}")
+        current_webhook = await bot.get_webhook_info()
+        if current_webhook.url != API_WEBHOOK_URL:
+            await bot.set_webhook(url=API_WEBHOOK_URL)
+            Utils.log_info(f"Webhook Telegram configuré sur : {env_vars.WEBHOOK_URL}")
+        else:
+            Utils.log_info("Webhook déjà configuré, aucune modification nécessaire.")
     except Exception as e:
         Utils.log_error(f"Erreur lors de la configuration du webhook Telegram : {e}")
 
