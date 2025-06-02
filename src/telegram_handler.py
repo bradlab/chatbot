@@ -42,7 +42,7 @@ async def start_command(update: Update, context):
         bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
         # await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, response_text, "bot")
     except Exception as e:
-        Utils.log_error(f"===== Start command error ====== $e")
+        Utils.log_error(f"===== Start command error ====== {e}")
     
 
 async def handle_message(update: Update, context):
@@ -122,6 +122,7 @@ async def configure_telegram_webhook():
     bot = Bot(TELEGRAM_BOT_TOKEN)
     try:
         current_webhook = await bot.get_webhook_info()
+        Utils.log_warning(f"===== TELEGRAM to connect to the WEBHOOK with ==== : {env_vars.WEBHOOK_URL}")
         if current_webhook.url != API_WEBHOOK_URL:
             await bot.set_webhook(url=API_WEBHOOK_URL)
             Utils.log_info(f"Webhook Telegram configuré sur : {env_vars.WEBHOOK_URL}")
