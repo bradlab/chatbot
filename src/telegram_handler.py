@@ -1,6 +1,7 @@
 from telegram import Update, Bot
 from telegram.ext import Application, MessageHandler, filters, CommandHandler
 from mistralai import Mistral
+import asyncio
 
 from .dynamodb_repository import dynamodb_repo
 from .config import env_vars
@@ -34,13 +35,12 @@ async def start_command(update: Update, context):
     user_name = user.full_name or user.username or "N/A"
     await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, "user", user_message)
     response_text = f"Bonjour {user_name} ! Je suis Koz votre bot intelligent de causerie. Posez-moi une question !"
-    await update.message.reply_text()
+    # await update.message.reply_text()
     bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
     await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, response_text, "bot")
     
 
 async def handle_message(update: Update, context):
-    # Traite tous les messages texte et utilise MistralAI pour répondre.
     try:
         if update.message and update.message.text:
             user = update.message.from_user
@@ -49,23 +49,24 @@ async def handle_message(update: Update, context):
             message_id = update.message.message_id
             user_name = user.full_name or user.username or "N/A"
             
-            # Enregistrer le message utilisateur via le repository
             await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
 
             try:
-                chat_response = mistral_client.chat.complete(
-                    model=MISTRAL_MODEL,
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": user_message,
-                        },
-                    ]
+                # Timeout de 5 secondes sur l'appel à MistralAI
+                chat_response = await asyncio.wait_for(
+                    mistral_client.chat.complete(
+                        model=MISTRAL_MODEL,
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": user_message,
+                            },
+                        ]
+                    ),
+                    timeout=60  # secondes
                 )
-                
                 response_text = chat_response.choices[0].message.content
                 bot_message  = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
-                # Enregistrer la reponse du bot
                 await dynamodb_repo.save_message(
                     chat_id, 
                     bot_message.message_id, 
@@ -75,15 +76,17 @@ async def handle_message(update: Update, context):
                     "bot", 
                     MISTRAL_MODEL
                 )
+            except asyncio.TimeoutError:
+                error_response = "⏱️ Le service met trop de temps à répondre, veuillez réessayer plus tard."
+                bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=error_response)
+                await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, error_response, "bot")
             except Exception as e:
                 Utils.log_info(f"Erreur lors de l'interaction avec MistralAI ou Telegram: {e}")
                 error_response = "Désolé, une erreur est survenue lors du traitement de votre demande."
-                # Enregistrer le message d'erreur du bot via le dépôt
                 bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=error_response)
                 await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, error_response, "bot")
     except Exception as e:
         Utils.log_error("Traitement du message échoué.")
-
 async def setup_ptb_handlers():
     try:
         # Configure les handlers de l'application Python-Telegram-Bot
