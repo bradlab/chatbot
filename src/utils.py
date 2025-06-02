@@ -7,10 +7,7 @@ import boto3
 from src.config import env_vars
 ## Simple edit
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s %(message)s"
-)
+logging.basicConfig()
 logger = logging.getLogger("chatbot-bradlab-logs")
 
 class Utils:

@@ -27,17 +27,22 @@ mistral_client = Mistral(api_key=MISTRAL_API_KEY)
 ptb_app = Application.builder().token(TELEGRAM_BOT_TOKEN).updater(None).build()
 
 async def start_command(update: Update, context):
-    # Gère la commande /start.
-    user = update.message.from_user
-    user_message = update.message.text
-    chat_id = update.message.chat_id
-    message_id = update.message.message_id
-    user_name = user.full_name or user.username or "N/A"
-    await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, "user", user_message)
-    response_text = f"Bonjour {user_name} ! Je suis Koz votre bot intelligent de causerie. Posez-moi une question !"
-    # await update.message.reply_text()
-    bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
-    await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, response_text, "bot")
+    try:
+        # Gère la commande /start.
+        user = update.message.from_user
+        user_message = update.message.text
+        chat_id = update.message.chat_id
+        message_id = update.message.message_id
+        user_name = user.full_name or user.username or "N/A"
+        Utils.log_error(f"===== Start command Initializing ====== ")
+        
+        # await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, "user", user_message)
+        response_text = f"Bonjour {user_name} ! Je suis Koz votre bot intelligent de causerie. Posez-moi une question !"
+        # await update.message.reply_text()
+        bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
+        # await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, response_text, "bot")
+    except Exception as e:
+        Utils.log_error(f"===== Start command error ====== $e")
     
 
 async def handle_message(update: Update, context):
@@ -99,7 +104,10 @@ async def handle_message(update: Update, context):
 async def setup_ptb_handlers():
     try:
         # Configure les handlers de l'application Python-Telegram-Bot
+        Utils.log_warning("==== Configuration du webhook ====")
+        
         ptb_app.add_handler(CommandHandler("start", start_command))
+        Utils.log_warning("==== Handle first message ====")
         ptb_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
         await ptb_app.initialize()
         Utils.log_info("Handlers Telegram initialisés.")
