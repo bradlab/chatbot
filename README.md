@@ -78,6 +78,9 @@ Une API de chatbot développée avec FastAPI, conçue pour être déployée sur 
    DYNAMO_TABLE=votre-table-dynamo
    AWS_PROFILE=votre-profil-aws
    MISTRAL_API_KEY=votre-clé-mistral
+   TELEGRAM_BOT_TOKEN=votre-token-bot-telegram
+   TELEGRAM_API_URL=https://api.telegram.org/bot
+   WEBHOOK_URL=votre-api-url/webhook
    ```
 
 ## ▶️ Exécution
