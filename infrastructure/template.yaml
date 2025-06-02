@@ -16,35 +16,35 @@ Parameters:
     Default: bradlab
 ###############################################################################
 
-  # AWSRegionName:
-  #   Description: AWS region where resources will be deployed (e.g. eu-west-3)
-  #   Type: String
-  #   Default: eu-west-3
-  # DynamoTable:
-  #   Description: Name of the DynamoDB table used to persist chatbot conversations
-  #   Type: String
-  #   Default: ""
-  #   NoEcho: true
-  # AwsProfile:
-  #   Description: AWS CLI profile name used for deployment (for local/devops usage)
-  #   Type: String
-  #   Default: esgis_profile
-  # MistralApiKey:
-  #   Description: API key for accessing the Mistral AI service
-  #   Type: String
-  #   Default: ""
-  #   NoEcho: true
-  # TelegramBotToken:
-  #   Description: Telegram bot token for authenticating with the Telegram API
-  #   Type: String
-  #   Default: ""
-  #   NoEcho: true
-  # ApiWehookUrl:
-  #   Type: String
-  #   Default: https://p48s0cupm7.execute-api.eu-west-3.amazonaws.com/webhook
-  # TelegramApiBotUrl:
-  #   Type: String
-  #   Default: https://api.telegram.org/bot
+  AWSRegionName:
+    Description: AWS region where resources will be deployed (e.g. eu-west-3)
+    Type: String
+    Default: eu-west-3
+  DynamoTable:
+    Description: Name of the DynamoDB table used to persist chatbot conversations
+    Type: String
+    Default: ""
+    NoEcho: true
+  AwsProfile:
+    Description: AWS CLI profile name used for deployment (for local/devops usage)
+    Type: String
+    Default: esgis_profile
+  MistralApiKey:
+    Description: API key for accessing the Mistral AI service
+    Type: String
+    Default: ""
+    NoEcho: true
+  TelegramBotToken:
+    Description: Telegram bot token for authenticating with the Telegram API
+    Type: String
+    Default: ""
+    NoEcho: true
+  ApiWehookUrl:
+    Type: String
+    Default: https://p48s0cupm7.execute-api.eu-west-3.amazonaws.com/webhook
+  TelegramApiBotUrl:
+    Type: String
+    Default: https://api.telegram.org/bot
 ###############################################################################
 Resources:
 ###############################################################################
@@ -98,15 +98,15 @@ Resources:
       CodeUri: ../
       Handler: src/main.handler
       Runtime: python3.12
-      # Environment:
-      #   Variables:
-      #     ENV_NAME: !Ref EnvironmentName
-      #     AWS_REGION_NAME: !Ref AWSRegionName
-      #     DYNAMO_TABLE: !Ref DynamoDBTable
-      #     MISTRAL_API_KEY: !Ref MistralApiKey
-      #     TELEGRAM_BOT_TOKEN: !Ref TelegramBotToken
-      #     TELEGRAM_API_URL: !Ref TelegramApiBotUrl
-      #     WEBHOOK_URL:  !Ref ApiWehookUrl # Je veux qu'il soit construit à partir de l'url de l'api après déploiement. Format : https://api.domain.com/webhook
+      Environment:
+        Variables:
+          ENV_NAME: !Ref EnvironmentName
+          AWS_REGION_NAME: !Ref AWSRegionName
+          DYNAMO_TABLE: !Ref DynamoDBTable
+          MISTRAL_API_KEY: !Ref MistralApiKey
+          TELEGRAM_BOT_TOKEN: !Ref TelegramBotToken
+          TELEGRAM_API_URL: !Ref TelegramApiBotUrl
+          WEBHOOK_URL:  !Ref ApiWehookUrl
       Events:
         Api:
           Type: HttpApi
