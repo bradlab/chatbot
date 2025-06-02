@@ -36,11 +36,11 @@ async def start_command(update: Update, context):
         user_name = user.full_name or user.username or "N/A"
         Utils.log_error(f"===== Start command Initializing ====== ")
         
-        # await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, "user", user_message)
+        await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, "user", user_message)
         response_text = f"Bonjour {user_name} ! Je suis Koz votre bot intelligent de causerie. Posez-moi une question !"
         # await update.message.reply_text()
         bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
-        # await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, response_text, "bot")
+        await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, response_text, "bot")
     except Exception as e:
         Utils.log_error(f"===== Start command error ====== {e}")
     

@@ -8,7 +8,8 @@ pipeline {
     environment {
         // Define environment variables here
         BOT_NAME = 'awesome-bot'
-        // BOT_TOKEN = credentials('telegram-bot-token')
+        TELEGRAM_BOT_TOKEN = credentials('telegram-bot-token')
+        MISTRAL_API_KEY = credentials('mistral-api-key')
     }
 
     stages {
@@ -65,7 +66,51 @@ pipeline {
                 script {
                     // Add your deployment commands here
                     echo "Deploying the project..."
-                    sh "make deploy env=${BRANCH_NAME}"
+                    withCredentials([
+                        string(credentialsId: 'telegram-bot-token', variable: 'TELEGRAM_BOT_TOKEN'),
+                        string(credentialsId: 'mistral-api-key', variable: 'MISTRAL_API_KEY')
+                    ]) {
+                        sh """
+                            make deploy env=${BRANCH_NAME} \
+                            TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN} \
+                            MISTRAL_API_KEY=${MISTRAL_API_KEY}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Configure Webhook') {
+            when {
+                anyOf {
+                    branch 'alwil17'
+                    branch 'dev'
+                    branch 'preprod'
+                }
+            }
+            steps {
+                script {
+                    // Get the API URL from CloudFormation outputs
+                    def apiUrl = sh(
+                        script: """
+                            aws cloudformation describe-stacks \
+                            --stack-name multi-stack-${BRANCH_NAME} \
+                            --region eu-west-3 \
+                            --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" \
+                            --output text
+                        """,
+                        returnStdout: true
+                    ).trim()
+
+                    // Configure the webhook
+                    withCredentials([string(credentialsId: 'telegram-bot-token', variable: 'TELEGRAM_BOT_TOKEN')]) {
+                        sh """
+                            # Activer l'environnement virtuel et exécuter le script
+                            . .venv/bin/activate
+                            python seed/webhook.py --url "${apiUrl}/webhook"
+                            deactivate
+                        """
+                    }
                 }
             }
         }
