@@ -47,7 +47,7 @@ async def app_lifespan(application: FastAPI):
     yield # L'application est maintenant prête à recevoir des requêtes
 
     Utils.log_info("Application KOZ API arrêtée.")
-    await shutdown_ptb()
+    # await shutdown_ptb()
 
 
 app = FastAPI(
@@ -112,23 +112,12 @@ async def chat(question: str):
     Utils.insert_data(response)
     return response
 
-# @app.post("/set-webhook")
-# async def set_webhook(request: Request, authorization: str = Header(None)):
-#     data = await request.json()
-#     url = data.get("url")
-#     # utiliser le token dans 'authorization' pour vérifier
-#     # puis définir le webhook ici
-#     if (authorization == env_vars.TELEGRAM_BOT_TOKEN):
-#         asyncio.create_task(configure_telegram_webhook(url))
-#         return {"status": "ok", "webhook_set_to": url}
-#     return {"status": "error", "webhook_set_to": url}
-
 # Modèle pour la réponse
 class WebhookResponse(BaseModel):
     status: str
     webhook_set_to: HttpUrl
 
-@app.post("/set-webhook", response_model=WebhookResponse, summary="Configure Telegram Webhook")
+@app.post("/set-webhook", response_model=WebhookResponse, include_in_schema=False)
 async def set_webhook(
     payload: WebhookRequest,
     authorization: Optional[str] = Header(None, description="Bearer token for authentication")

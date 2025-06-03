@@ -36,13 +36,19 @@ async def start_command(update: Update, context):
         user_name = user.full_name or user.username or "N/A"
         Utils.log_error(f"===== Start command Initializing ====== {TELEGRAM_BOT_TOKEN}")
         
-        await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, "user", user_message)
+        try:
+            await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, "user", user_message)
+        except Exception as db_error:
+            Utils.log_error(f"DB_ERROR.start_command 1 ====== {e}")
         response_text = f"Bonjour {user_name} ! Je suis Koz votre bot intelligent de causerie. Posez-moi une question !"
         # await update.message.reply_text()
         bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
-        await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, response_text, "bot")
+        try:
+            await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, response_text, "bot")
+        except Exception as db_error:
+            Utils.log_error(f"DB_ERROR.start_command 2 ====== {e}")
     except Exception as e:
-        Utils.log_error(f"===== Start command error ====== {e}")
+        Utils.log_error(f"Start command error ====== {e}")
     
 
 async def handle_message(update: Update, context):
@@ -54,22 +60,12 @@ async def handle_message(update: Update, context):
             message_id = update.message.message_id
             user_name = user.full_name or user.username or "N/A"
             
-            await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
-
             try:
-                # Timeout de 5 secondes sur l'appel à MistralAI
-                # chat_response = await asyncio.wait_for(
-                #     mistral_client.chat.complete(
-                #         model=MISTRAL_MODEL,
-                #         messages=[
-                #             {
-                #                 "role": "user",
-                #                 "content": user_message,
-                #             },
-                #         ]
-                #     ),
-                #     timeout=60  # secondes
-                # )
+                await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
+            except Exception as db_error:
+                Utils.log_error(f"DB_ERROR.handle_message ====== {e}")
+                
+            try:
                 chat_response = mistral_client.chat.complete(
                     model=MISTRAL_MODEL,
                     messages=[
@@ -108,13 +104,13 @@ async def handle_message(update: Update, context):
 async def setup_ptb_handlers():
     try:
         # Configure les handlers de l'application Python-Telegram-Bot
-        Utils.log_warning("==== Configuration du webhook ====")
+        Utils.log_warning("Configuration du webhook ====")
         
         ptb_app.add_handler(CommandHandler("start", start_command))
-        Utils.log_warning("==== Handle first message ====")
+        Utils.log_warning("Handle first message ====")
         ptb_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
         await ptb_app.initialize()
-        Utils.log_info("Handlers Telegram initialisés.")
+        Utils.log_warning("Handlers Telegram initialisés.")
     except Exception as e:
         Utils.log_error(f"Erreur lors de la configuration des handlers Telegram : {e}")
 
@@ -145,10 +141,13 @@ async def configure_telegram_webhook(webhook_url: str):
         current_webhook = await bot.get_webhook_info()
         Utils.log_warning(f"===== TELEGRAM to connect to the WEBHOOK with ==== : {webhook_url}")
         if current_webhook.url != api_webhook_url:
-            await bot.set_webhook(url=api_webhook_url)
-            Utils.log_info(f"Webhook Telegram configuré sur : {webhook_url}")
+            try:
+                await bot.set_webhook(url=api_webhook_url)
+                Utils.log_info(f"Webhook Telegram configuré sur : {webhook_url}")
+            except Exception as bot_error:
+                Utils.log_error(f"Erreur configuration du webhook url : {e}")
         else:
-            Utils.log_info("Webhook déjà configuré, aucune modification nécessaire.")
+            Utils.log_warning("Webhook déjà configuré, aucune modification nécessaire.")
     except Exception as e:
         Utils.log_error(f"Erreur lors de la configuration du webhook Telegram : {e}")
 

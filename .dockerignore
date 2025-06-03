@@ -30,6 +30,7 @@ dist/
 
 # Ignorer les fichiers d'environnement locaux
 .env
+.dev.env
 *.env
 
 # Ignorer les fichiers de build ou de CI/CD qui ne sont pas nécessaires à l'exécution de l'app

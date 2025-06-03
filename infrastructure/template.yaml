@@ -41,7 +41,7 @@ Parameters:
     NoEcho: true
   ApiWehookUrl:
     Type: String
-    Default: https://p48s0cupm7.execute-api.eu-west-3.amazonaws.com/webhook
+    Default: ""
   TelegramApiBotUrl:
     Type: String
     Default: https://api.telegram.org/bot
