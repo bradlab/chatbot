@@ -40,12 +40,12 @@ async def start_command(update: Update, context):
         # except Exception as db_error:
         #     Utils.log_error(f"DB_ERROR.start_command 1 ====== {e}")
         response_text = (
-            f"Bonjour {user_name} ! Comment puis-je vous aider aujourd'hui ? Discutons ensemble. Voici quelques suggestions pour commencer :\n\n"
-            "• Vous pouvez me poser une question sur un sujet qui vous intéresse.\n"
-            "• Nous pouvons jouer à un jeu de mots, comme l'association d'idées ou le jeu des 20 questions.\n"
-            "• Vous pouvez partager quelque chose sur vous, et j'essaierai de faire le lien.\n"
-            "• Nous pouvons discuter d'un événement récent ou d'un sujet d'actualité.\n\n"
-            "Par quoi souhaitez-vous commencer ?"
+            f"Hello {user_name}! How can I assist you today? Let's have a friendly conversation. Here are a few suggestions for how we can proceed:\n\n"
+            "• You can ask me a question about a topic you're interested in.\n"
+            "• We can play a word game, like word association or 20 questions.\n"
+            "• You can share something about yourself, and I'll do my best to relate.\n"
+            "• We can discuss a recent event or trending topic.\n\n"
+            "How would you like to begin?"
         )
         # await update.message.reply_text()
         bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
@@ -68,7 +68,7 @@ async def handle_message(update: Update, context):
             
             # try:
             #     Utils.log_warning(f"KOZ_MSG ======= {user_name} - {user_message}")
-            await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
+            # await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
             # except Exception as db_error:
             #     Utils.log_error(f"DB_ERROR.handle_message ====== {db_error}")
                 
@@ -99,7 +99,7 @@ async def handle_message(update: Update, context):
                 except Exception as db_error:
                     Utils.log_info(f"Erreur lors de l'enregistrement dans DynamoDB: {db_error}")
             except Exception as e:
-                error_response = "Désolé, une erreur est survenue lors du traitement de votre demande."
+                error_response = "Sorry, an error occurred while processing your message."
                 bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=error_response)
                 # try:
                 #     await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, error_response, "bot")
