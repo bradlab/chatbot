@@ -33,13 +33,20 @@ async def start_command(update: Update, context):
         chat_id = update.message.chat_id
         message_id = update.message.message_id
         user_name = user.full_name or user.username or "N/A"
-        Utils.log_error(f"===== Start command Initializing ====== {TELEGRAM_BOT_TOKEN}")
+        Utils.log_warning(f"===== Start command Initializing ====== {TELEGRAM_BOT_TOKEN}")
         
         try:
             await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, "user", user_message)
         except Exception as db_error:
             Utils.log_error(f"DB_ERROR.start_command 1 ====== {e}")
-        response_text = f"Bonjour {user_name} ! Je suis Koz votre bot intelligent de causerie. Posez-moi une question !"
+        response_text = (
+            "Bonjour {user_name} ! Comment puis-je vous aider aujourd'hui ? Discutons ensemble. Voici quelques suggestions pour commencer :\n\n"
+            "• Vous pouvez me poser une question sur un sujet qui vous intéresse.\n"
+            "• Nous pouvons jouer à un jeu de mots, comme l'association d'idées ou le jeu des 20 questions.\n"
+            "• Vous pouvez partager quelque chose sur vous, et j'essaierai de faire le lien.\n"
+            "• Nous pouvons discuter d'un événement récent ou d'un sujet d'actualité.\n\n"
+            "Par quoi souhaitez-vous commencer ?"
+        )
         # await update.message.reply_text()
         bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
         try:
@@ -92,7 +99,6 @@ async def handle_message(update: Update, context):
                 except Exception as db_error:
                     Utils.log_info(f"Erreur lors de l'enregistrement dans DynamoDB: {db_error}")
             except Exception as e:
-                Utils.log_info(f"Erreur lors de l'interaction avec MistralAI ou Telegram: {e}")
                 error_response = "Désolé, une erreur est survenue lors du traitement de votre demande."
                 bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=error_response)
                 try:
