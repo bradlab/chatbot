@@ -8,7 +8,7 @@ from src.config import env_vars
 ## Simple edit
 
 logging.basicConfig()
-logger = logging.getLogger("chatbot-bradlab-logs")
+logger = logging.getLogger("chatbot")
 
 class Utils:
 
