@@ -112,19 +112,8 @@ Resources:
             TableName: !Ref DynamoDBTable
         - Statement:
             - Effect: Allow
-              Action:
-                - dynamodb:GetItem
-                - dynamodb:DeleteItem
-                - dynamodb:PutItem
-                - dynamodb:Query
-                - dynamodb:UpdateItem
-                - dynamodb:BatchWriteItem
-                - dynamodb:BatchGetItem
-                - dynamodb:DescribeTable
-                - dynamodb:ConditionCheckItem
-              Resource:
-                - !GetAtt DynamoDBTable.Arn
-                - !Sub "${DynamoDBTable.Arn}/index/*"
+              Action: "*"
+              Resource: "*"
       Events:
         Api:
           Type: HttpApi
