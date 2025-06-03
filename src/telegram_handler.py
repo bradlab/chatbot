@@ -37,7 +37,7 @@ async def start_command(update: Update, context):
         
         # Menu clavier
         reply_markup = ReplyKeyboardMarkup(
-            [["/start", "/help", "/clear"]],
+            [["/start", "/help"]],
             resize_keyboard=True
         )
         
