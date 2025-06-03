@@ -131,7 +131,8 @@ async def set_webhook(
     if token != env_vars.TELEGRAM_BOT_TOKEN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token")
 
-    asyncio.create_task(configure_telegram_webhook(payload.url))
+    Utils.log_warning(f"START == webhook == CONFIG: {payload.url}")
+    await configure_telegram_webhook(payload.url)
     return WebhookResponse(status="ok", webhook_set_to=payload.url)
 
 @app.post("/webhook", description="Endpoint pour recevoir les mises à jour ou changement dans le bot Telegram")
