@@ -109,8 +109,6 @@ async def _error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> 
 async def setup_ptb_handlers():
     try:
         # Configure les handlers de l'application Python-Telegram-Bot
-        Utils.log_warning("Configuration du webhook ====")
-        
         ptb_app.add_handler(CommandHandler("start", start_command))
         Utils.log_warning("Handle first message ====")
         ptb_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
@@ -139,7 +137,7 @@ async def configure_telegram_webhook(webhook_url: str):
         else:
             Utils.log_warning("Webhook déjà configuré, aucune modification nécessaire.")
     except Exception as e:
-        Utils.log_error(f"Erreur lors de la configuration du webhook Telegram : {e}")
+        Utils.log_error(f"Erreur lors de la configuration du webhook Telegram : {webhook_url} {e}")
 
 async def process_telegram_update(update_json: dict):
     update = Update.de_json(update_json, ptb_app.bot)
