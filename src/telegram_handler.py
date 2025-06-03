@@ -116,6 +116,29 @@ async def handle_message(update: Update, context):
     except Exception as e:
         Utils.log_error("Traitement du message échoué.")
 
+async def help_command(update: Update, context):
+    try:
+        chat_id = update.message.chat_id
+        response_text = (
+            "Voici les commandes disponibles :\n"
+            "/start - Afficher le menu principal\n"
+            "/help - Afficher l'aide\n"
+            "/clear - Effacer la conversation"
+        )
+        await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
+    except Exception as e:
+        Utils.log_error(f"Help command error ==== {e}")
+
+async def clear_command(update: Update, context):
+    try:
+        chat_id = update.message.chat_id
+        response_text = "La conversation a été effacée"
+        await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
+        # Ici tu peux ajouter la logique pour effacer l'historique si besoin
+    except Exception as e:
+        Utils.log_error(f"Clear command error ==== {e}")
+
+
 async def _error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     Utils.log_error(f"== Unhandled Telegram exception: {context.error}")
 
@@ -124,6 +147,8 @@ async def setup_ptb_handlers():
     try:
         # Configure les handlers de l'application Python-Telegram-Bot
         ptb_app.add_handler(CommandHandler("start", start_command))
+        ptb_app.add_handler(CommandHandler("help", help_command))
+        ptb_app.add_handler(CommandHandler("clear", clear_command))
         Utils.log_warning("Handle first message ====")
         ptb_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
         ptb_app.add_error_handler(_error_handler)
