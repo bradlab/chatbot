@@ -75,8 +75,7 @@ async def handle_message(update: Update, context):
             
             try:
                 Utils.log_warning(f"GET MISTRAL RESPONSE ======")
-                chat_response = await asyncio.to_thread(
-                    mistral_client.chat.complete,
+                chat_response = mistral_client.chat.complete(
                     model=MISTRAL_MODEL,
                     messages=[
                         {
