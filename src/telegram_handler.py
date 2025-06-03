@@ -99,22 +99,22 @@ async def handle_message(update: Update, context):
                     bot_message  = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
                     Utils.log_warning(f"ANSWER SENT ======= {bot_message.message_id}")
                     
-                    try:
-                        if bot_message :
+                    if bot_message :
+                        try:
                             Utils.log_warning(f"SAVING ANSWER ======= {bot_message.message_id}")
                             # Enregistrement dans DynamoDB
-                            # await dynamodb_repo.save_message(
-                            #     chat_id, 
-                            #     bot_message.message_id, 
-                            #     ptb_app.bot.id, 
-                            #     ptb_app.bot.username, 
-                            #     response_text,
-                            #     "bot", 
-                            #     MISTRAL_MODEL
-                            # )
-                            Utils.log_warning(f"ANSWER SAVED =======")
-                    except Exception as db_error:
-                        Utils.log_info(f"Erreur lors de l'enregistrement dans DynamoDB: {db_error}")
+                            await dynamodb_repo.save_message(
+                                chat_id, 
+                                bot_message.message_id, 
+                                ptb_app.bot.id, 
+                                ptb_app.bot.username, 
+                                response_text,
+                                "bot", 
+                                MISTRAL_MODEL
+                            )
+                        except Exception as db_error:
+                            Utils.log_info(f"Erreur lors de l'enregistrement dans DynamoDB: {db_error}")
+                    Utils.log_warning(f"ANSWER SAVED =======")
             except Exception as e:
                 error_response = "Sorry, an error occurred while processing your message. "
                 Utils.log_error(f"{error_response}: {e}")
