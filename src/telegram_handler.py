@@ -68,10 +68,11 @@ async def handle_message(update: Update, context):
             
             # try:
             #     Utils.log_warning(f"KOZ_MSG ======= {user_name} - {user_message}")
-            # await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
+            await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
             # except Exception as db_error:
             #     Utils.log_error(f"DB_ERROR.handle_message ====== {db_error}")
-                
+            Utils.log_warning(f"CONTINUE PROCESS ======= {user_name} - {user_message}")
+            
             try:
                 chat_response = await asyncio.to_thread(
                     mistral_client.chat.complete,
