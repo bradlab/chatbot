@@ -41,7 +41,7 @@ async def start_command(update: Update, context):
             resize_keyboard=True
         )
         
-        await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, "user", user_message)
+        # await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, "user", user_message)
         response_text = (
             f"Hello {user_name}! How can I assist you today? Let's have a friendly conversation. Here are a few suggestions for how we can proceed:\n\n"
             "• You can ask me a question about a topic you're interested in.\n"
@@ -52,7 +52,7 @@ async def start_command(update: Update, context):
         )
         # await update.message.reply_text()
         bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text,  reply_markup=reply_markup)
-        await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, response_text, "bot")
+        # await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, response_text, "bot")
     except Exception as e:
         Utils.log_error(f"Start command error ==== {e}")
     
@@ -67,7 +67,7 @@ async def handle_message(update: Update, context):
             user_name = user.full_name or user.username or "N/A"
             
             Utils.log_warning(f"KOZ_MSG ======= {user_name} - {user_message}")
-            await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
+            # await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
             Utils.log_warning(f"CONTINUE PROCESS ======= {user_name}")
             
             try:
@@ -85,31 +85,25 @@ async def handle_message(update: Update, context):
                 
                 if (chat_response):
                     response_text = chat_response.choices[0].message.content
-                    Utils.log_warning(f"MESSAGE ANSWER ======= {response_text}")
                     
                     bot_message  = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
-                    Utils.log_warning(f"ANSWER SENT ======= {bot_message.message_id}")
                     
-                    Utils.log_warning(f"SAVING ANSWER ======= {bot_message.message_id}")
                     # Enregistrement dans DynamoDB
-                    await dynamodb_repo.save_message(
-                        chat_id, 
-                        bot_message.message_id, 
-                        ptb_app.bot.id, 
-                        ptb_app.bot.username, 
-                        response_text,
-                        "bot",
-                        MISTRAL_MODEL
-                    )
+                    # await dynamodb_repo.save_message(
+                    #     chat_id, 
+                    #     bot_message.message_id, 
+                    #     ptb_app.bot.id, 
+                    #     ptb_app.bot.username, 
+                    #     response_text,
+                    #     "bot",
+                    #     MISTRAL_MODEL
+                    # )
                     Utils.log_warning(f"ANSWER SAVED =======")
             except Exception as e:
                 error_response = "Sorry, an error occurred while processing your message. "
                 Utils.log_error(f"{error_response}: {e}")
                 bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=error_response)
-                # try:
-                #     await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, error_response, "bot")
-                # except Exception as db_error:
-                    # Utils.log_error(f"Erreur lors de l'enregistrement dans DynamoDB: {db_error}")
+                # await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, error_response, "bot")
     except Exception as e:
         Utils.log_error("Traitement du message échoué.")
 
