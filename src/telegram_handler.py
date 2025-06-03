@@ -74,6 +74,7 @@ async def handle_message(update: Update, context):
             Utils.log_warning(f"CONTINUE PROCESS ======= {user_name}")
             
             try:
+                Utils.log_warning(f"GET MISTRAL RESPONSE ======")
                 chat_response = await asyncio.to_thread(
                     mistral_client.chat.complete,
                     model=MISTRAL_MODEL,
@@ -91,7 +92,7 @@ async def handle_message(update: Update, context):
                 Utils.log_warning(f"ANSWER SENT ======= {bot_message.message_id}")
                 
                 try:
-                    if not bot_message :
+                    if bot_message :
                         Utils.log_warning(f"SAVING ANSWER ======= {bot_message.message_id}")
                         # Enregistrement dans DynamoDB
                         await dynamodb_repo.save_message(
