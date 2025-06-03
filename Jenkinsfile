@@ -106,10 +106,10 @@ pipeline {
                     // Configure the webhook
                     withCredentials([string(credentialsId: 'telegram-bot-token', variable: 'TELEGRAM_BOT_TOKEN')]) {
                         sh """
-                            curl -X POST "${apiUrl}/set-webhook" \\
+                            curl -X POST "${apiUrl}set-webhook" \\
                                 -H "Authorization: Bearer ${TELEGRAM_BOT_TOKEN}" \\
                                 -H "Content-Type: application/json" \\
-                                -d '{ "url": "${apiUrl}/webhook" }'
+                                -d '{ "url": "${apiUrl}webhook" }'
                         """
                     }
                 }

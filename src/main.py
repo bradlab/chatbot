@@ -47,7 +47,7 @@ async def app_lifespan(application: FastAPI):
     yield # L'application est maintenant prête à recevoir des requêtes
 
     Utils.log_info("Application KOZ API arrêtée.")
-    # await shutdown_ptb()
+    await shutdown_ptb()
 
 
 app = FastAPI(
