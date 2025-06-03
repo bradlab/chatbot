@@ -113,7 +113,8 @@ async def handle_message(update: Update, context):
                 except Exception as db_error:
                     Utils.log_info(f"Erreur lors de l'enregistrement dans DynamoDB: {db_error}")
             except Exception as e:
-                error_response = "Sorry, an error occurred while processing your message."
+                error_response = "Sorry, an error occurred while processing your message. "
+                Utils.log_error(f"{error_response}: {e}")
                 bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=error_response)
                 # try:
                 #     await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, error_response, "bot")
