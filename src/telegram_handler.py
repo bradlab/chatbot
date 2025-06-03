@@ -133,11 +133,11 @@ async def configure_telegram_webhook(webhook_url: str):
     bot = Bot(TELEGRAM_BOT_TOKEN)
     try:
         current_webhook = await bot.get_webhook_info()
-        Utils.log_warning(f"===== TELEGRAM to connect to the WEBHOOK with ==== : {webhook_url} => {current_webhook.url}")
+        Utils.log_warning(f"===== TELEGRAM to connect : \n NEW : {webhook_url} \n OLD: {current_webhook.url}")
         if current_webhook.url != api_webhook_url:
             try:
                 await bot.set_webhook(url=api_webhook_url)
-                Utils.log_info(f"Webhook Telegram configuré sur : {webhook_url}")
+                Utils.log_warning(f"Webhook Telegram configuré sur : {webhook_url}")
             except Exception as bot_error:
                 Utils.log_error(f"Erreur configuration du webhook url : {e}")
         else:

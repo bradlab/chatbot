@@ -83,9 +83,10 @@ pipeline {
         stage('Configure Webhook') {
             when {
                 anyOf {
-                    branch 'alwil17'
+                    branch 'bradlab'
                     branch 'dev'
                     branch 'preprod'
+                    branch 'prod'
                 }
             }
             steps {
