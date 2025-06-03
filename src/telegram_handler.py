@@ -1,5 +1,5 @@
 from telegram import Update, Bot
-from telegram.ext import Application, MessageHandler, filters, CommandHandler
+from telegram.ext import Application, MessageHandler, filters, CommandHandler, ContextTypes
 from mistralai import Mistral
 import asyncio
 
@@ -63,10 +63,11 @@ async def handle_message(update: Update, context):
                 Utils.log_warning(f"KOZ_MSG ======= {user_name} - {user_message}")
                 await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
             except Exception as db_error:
-                Utils.log_error(f"DB_ERROR.handle_message ====== {e}")
+                Utils.log_error(f"DB_ERROR.handle_message ====== {db_error}")
                 
             try:
-                chat_response = mistral_client.chat.complete(
+                chat_response = await asyncio.to_thread(
+                    mistral_client.chat.complete,
                     model=MISTRAL_MODEL,
                     messages=[
                         {
@@ -100,6 +101,10 @@ async def handle_message(update: Update, context):
                     Utils.log_info(f"Erreur lors de l'enregistrement dans DynamoDB: {db_error}")
     except Exception as e:
         Utils.log_error("Traitement du message échoué.")
+
+async def _error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    Utils.log_error(f"== Unhandled Telegram exception: {context.error}")
+
         
 async def setup_ptb_handlers():
     try:
@@ -109,6 +114,7 @@ async def setup_ptb_handlers():
         ptb_app.add_handler(CommandHandler("start", start_command))
         Utils.log_warning("Handle first message ====")
         ptb_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+        ptb_app.add_error_handler(_error_handler)
         await ptb_app.initialize()
         Utils.log_warning("Handlers Telegram initialisés.")
     except Exception as e:
