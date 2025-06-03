@@ -11,8 +11,7 @@ api_key = env_vars.MISTRAL_API_KEY
 # Récupérer les jetons depuis les variables d'environnement
 TELEGRAM_BOT_TOKEN = env_vars.TELEGRAM_BOT_TOKEN
 MISTRAL_API_KEY = env_vars.MISTRAL_API_KEY
-API_WEBHOOK_URL = f"{env_vars.TELEGRAM_API_URL}{TELEGRAM_BOT_TOKEN}/setWebhook?url={env_vars.WEBHOOK_URL}" 
-# API_WEBHOOK_URL = env_vars.WEBHOOK_URL
+# API_WEBHOOK_URL = f"{env_vars.TELEGRAM_API_URL}{TELEGRAM_BOT_TOKEN}/setWebhook?url={env_vars.WEBHOOK_URL}" 
 MISTRAL_MODEL = "mistral-large-latest"
 
 if not TELEGRAM_BOT_TOKEN:
@@ -115,22 +114,6 @@ async def setup_ptb_handlers():
     except Exception as e:
         Utils.log_error(f"Erreur lors de la configuration des handlers Telegram : {e}")
 
-# async def configure_telegram_webhook(webhook_url: str):
-#     if not API_WEBHOOK_URL:
-#         Utils.log_error("WEBHOOK_URL non défini. Le webhook ne sera pas configuré automatiquement.")
-#         return
-
-#     bot = Bot(TELEGRAM_BOT_TOKEN)
-#     try:
-#         current_webhook = await bot.get_webhook_info()
-#         Utils.log_warning(f"===== TELEGRAM to connect to the WEBHOOK with ==== : {env_vars.WEBHOOK_URL}")
-#         if current_webhook.url != API_WEBHOOK_URL:
-#             await bot.set_webhook(url=API_WEBHOOK_URL)
-#             Utils.log_info(f"Webhook Telegram configuré sur : {env_vars.WEBHOOK_URL}")
-#         else:
-#             Utils.log_info("Webhook déjà configuré, aucune modification nécessaire.")
-#     except Exception as e:
-#         Utils.log_error(f"Erreur lors de la configuration du webhook Telegram : {e}")
 async def configure_telegram_webhook(webhook_url: str):
     api_webhook_url = f"{env_vars.TELEGRAM_API_URL}{TELEGRAM_BOT_TOKEN}/setWebhook?url={webhook_url}" 
     if not api_webhook_url:
