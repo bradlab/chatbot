@@ -105,10 +105,10 @@ pipeline {
                     // Configure the webhook
                     withCredentials([string(credentialsId: 'telegram-bot-token', variable: 'TELEGRAM_BOT_TOKEN')]) {
                         sh """
-                            # Activer l'environnement virtuel et exécuter le script
-                            . .venv/bin/activate
-                            python seed/webhook.py --url "${apiUrl}/webhook"
-                            deactivate
+                            curl -X POST "${apiUrl}/set-webhook" \\
+                                -H "Authorization: Bearer ${TELEGRAM_BOT_TOKEN}" \\
+                                -H "Content-Type: application/json" \\
+                                -d '{ "url": "${apiUrl}/webhook" }'
                         """
                     }
                 }

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException, Query
+from fastapi import FastAPI, Request, HTTPException, Header, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from mangum import Mangum
@@ -8,6 +8,10 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 import datetime
 from mistralai import Mistral
+from pydantic import BaseModel, HttpUrl
+from typing import Optional
+from .config import env_vars
+
 import asyncio
 
 from .dynamodb_repository import dynamodb_repo
@@ -29,6 +33,9 @@ from .utils import Utils
 api_key = env_vars.MISTRAL_API_KEY
 model = "mistral-small-latest"
 client = Mistral(api_key=api_key)
+
+class WebhookRequest(BaseModel):
+    url: HttpUrl
 
 
 @asynccontextmanager
@@ -104,6 +111,39 @@ async def chat(question: str):
     }
     Utils.insert_data(response)
     return response
+
+# @app.post("/set-webhook")
+# async def set_webhook(request: Request, authorization: str = Header(None)):
+#     data = await request.json()
+#     url = data.get("url")
+#     # utiliser le token dans 'authorization' pour vérifier
+#     # puis définir le webhook ici
+#     if (authorization == env_vars.TELEGRAM_BOT_TOKEN):
+#         asyncio.create_task(configure_telegram_webhook(url))
+#         return {"status": "ok", "webhook_set_to": url}
+#     return {"status": "error", "webhook_set_to": url}
+
+# Modèle pour la réponse
+class WebhookResponse(BaseModel):
+    status: str
+    webhook_set_to: HttpUrl
+
+@app.post("/set-webhook", response_model=WebhookResponse, summary="Configure Telegram Webhook")
+async def set_webhook(
+    payload: WebhookRequest,
+    authorization: Optional[str] = Header(None, description="Bearer token for authentication")
+):
+    if authorization is None or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid Authorization header")
+
+    token = authorization.split("Bearer ")[-1]
+
+    # Vérifie que le token correspond à celui attendu (à adapter selon ton besoin)
+    if token != env_vars.TELEGRAM_BOT_TOKEN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token")
+
+    asyncio.create_task(configure_telegram_webhook(payload.url))
+    return WebhookResponse(status="ok", webhook_set_to=payload.url)
 
 @app.post("/webhook", description="Endpoint pour recevoir les mises à jour ou changement dans le bot Telegram")
 async def telegram_webhook(request: Request):
