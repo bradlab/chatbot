@@ -85,18 +85,25 @@ async def handle_message(update: Update, context):
                     ]
                 )
                 response_text = chat_response.choices[0].message.content
+                Utils.log_warning(f"MESSAGE ANSWER ======= {response_text}")
+                
                 bot_message  = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
+                Utils.log_warning(f"ANSWER SENT ======= {bot_message.message_id}")
+                
                 try:
-                    # Enregistrement dans DynamoDB
-                    await dynamodb_repo.save_message(
-                        chat_id, 
-                        bot_message.message_id, 
-                        ptb_app.bot.id, 
-                        ptb_app.bot.username, 
-                        response_text,
-                        "bot", 
-                        MISTRAL_MODEL
-                    )
+                    if not bot_message :
+                        Utils.log_warning(f"SAVING ANSWER ======= {bot_message.message_id}")
+                        # Enregistrement dans DynamoDB
+                        await dynamodb_repo.save_message(
+                            chat_id, 
+                            bot_message.message_id, 
+                            ptb_app.bot.id, 
+                            ptb_app.bot.username, 
+                            response_text,
+                            "bot", 
+                            MISTRAL_MODEL
+                        )
+                        Utils.log_warning(f"ANSWER SAVED =======")
                 except Exception as db_error:
                     Utils.log_info(f"Erreur lors de l'enregistrement dans DynamoDB: {db_error}")
             except Exception as e:
