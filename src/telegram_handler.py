@@ -54,7 +54,7 @@ async def start_command(update: Update, context):
         # except Exception as db_error:
         #     Utils.log_error(f"DB_ERROR.start_command 2 ====== {e}")
     except Exception as e:
-        Utils.log_error(f"Start command error ====== {e}")
+        Utils.log_error(f"Start command error ==== {e}")
     
 
 async def handle_message(update: Update, context):
@@ -133,7 +133,7 @@ async def configure_telegram_webhook(webhook_url: str):
     bot = Bot(TELEGRAM_BOT_TOKEN)
     try:
         current_webhook = await bot.get_webhook_info()
-        Utils.log_warning(f"===== TELEGRAM to connect : \n NEW : {webhook_url} \n OLD: {current_webhook.url}")
+        Utils.log_warning(f"=== TELEGRAM to connect : \n NEW : {webhook_url} \n OLD: {current_webhook.url}")
         if current_webhook.url != api_webhook_url:
             try:
                 await bot.set_webhook(url=api_webhook_url)
