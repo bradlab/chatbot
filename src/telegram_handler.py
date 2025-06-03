@@ -35,10 +35,10 @@ async def start_command(update: Update, context):
         user_name = user.full_name or user.username or "N/A"
         Utils.log_warning(f"===== Start command Initializing ====== {TELEGRAM_BOT_TOKEN}")
         
-        try:
-            await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, "user", user_message)
-        except Exception as db_error:
-            Utils.log_error(f"DB_ERROR.start_command 1 ====== {e}")
+        # try:
+        #     await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, "user", user_message)
+        # except Exception as db_error:
+        #     Utils.log_error(f"DB_ERROR.start_command 1 ====== {e}")
         response_text = (
             "Bonjour {user_name} ! Comment puis-je vous aider aujourd'hui ? Discutons ensemble. Voici quelques suggestions pour commencer :\n\n"
             "• Vous pouvez me poser une question sur un sujet qui vous intéresse.\n"
@@ -49,10 +49,10 @@ async def start_command(update: Update, context):
         )
         # await update.message.reply_text()
         bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
-        try:
-            await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, response_text, "bot")
-        except Exception as db_error:
-            Utils.log_error(f"DB_ERROR.start_command 2 ====== {e}")
+        # try:
+        #     await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, response_text, "bot")
+        # except Exception as db_error:
+        #     Utils.log_error(f"DB_ERROR.start_command 2 ====== {e}")
     except Exception as e:
         Utils.log_error(f"Start command error ====== {e}")
     
