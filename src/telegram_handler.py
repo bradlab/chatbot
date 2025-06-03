@@ -66,11 +66,11 @@ async def handle_message(update: Update, context):
             message_id = update.message.message_id
             user_name = user.full_name or user.username or "N/A"
             
-            try:
-                Utils.log_warning(f"KOZ_MSG ======= {user_name} - {user_message}")
-                await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
-            except Exception as db_error:
-                Utils.log_error(f"DB_ERROR.handle_message ====== {db_error}")
+            # try:
+            #     Utils.log_warning(f"KOZ_MSG ======= {user_name} - {user_message}")
+            #     await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
+            # except Exception as db_error:
+            #     Utils.log_error(f"DB_ERROR.handle_message ====== {db_error}")
                 
             try:
                 chat_response = await asyncio.to_thread(
@@ -85,26 +85,26 @@ async def handle_message(update: Update, context):
                 )
                 response_text = chat_response.choices[0].message.content
                 bot_message  = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
-                try:
-                    # Enregistrement dans DynamoDB
-                    await dynamodb_repo.save_message(
-                        chat_id, 
-                        bot_message.message_id, 
-                        ptb_app.bot.id, 
-                        ptb_app.bot.username, 
-                        response_text,
-                        "bot", 
-                        MISTRAL_MODEL
-                    )
-                except Exception as db_error:
-                    Utils.log_info(f"Erreur lors de l'enregistrement dans DynamoDB: {db_error}")
+                # try:
+                #     # Enregistrement dans DynamoDB
+                #     await dynamodb_repo.save_message(
+                #         chat_id, 
+                #         bot_message.message_id, 
+                #         ptb_app.bot.id, 
+                #         ptb_app.bot.username, 
+                #         response_text,
+                #         "bot", 
+                #         MISTRAL_MODEL
+                #     )
+                # except Exception as db_error:
+                #     Utils.log_info(f"Erreur lors de l'enregistrement dans DynamoDB: {db_error}")
             except Exception as e:
                 error_response = "Désolé, une erreur est survenue lors du traitement de votre demande."
                 bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=error_response)
-                try:
-                    await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, error_response, "bot")
-                except Exception as db_error:
-                    Utils.log_info(f"Erreur lors de l'enregistrement dans DynamoDB: {db_error}")
+                # try:
+                #     await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, error_response, "bot")
+                # except Exception as db_error:
+                #     Utils.log_info(f"Erreur lors de l'enregistrement dans DynamoDB: {db_error}")
     except Exception as e:
         Utils.log_error("Traitement du message échoué.")
 
