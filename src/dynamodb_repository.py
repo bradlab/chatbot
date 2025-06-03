@@ -43,9 +43,9 @@ class DynamoDBRepository:
         Sauvegarde un message (utilisateur ou bot) dans la table DynamoDB.
         """
         try:
-            # id = str(uuid.uuid4())  # Génère un UUID
+            id = str(uuid.uuid4())  # Génère un UUID
             item = {
-                # 'id': id,
+                'id': id,
                 'chat_id': str(chat_id),
                 'timestamp': datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 'message_id': str(message_id),
