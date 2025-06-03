@@ -1,4 +1,4 @@
-from telegram import Update, Bot
+from telegram import Update, Bot, ReplyKeyboardMarkup
 from telegram.ext import Application, MessageHandler, filters, CommandHandler, ContextTypes
 from mistralai import Mistral
 import asyncio
@@ -35,6 +35,12 @@ async def start_command(update: Update, context):
         user_name = user.full_name or user.username or "N/A"
         Utils.log_warning(f"===== Start command Initializing ====== {TELEGRAM_BOT_TOKEN}")
         
+        # Menu clavier
+        reply_markup = ReplyKeyboardMarkup(
+            [["/start", "/help", "/clear"]],
+            resize_keyboard=True
+        )
+        
         # try:
         #     await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, "user", user_message)
         # except Exception as db_error:
@@ -48,7 +54,7 @@ async def start_command(update: Update, context):
             "How would you like to begin?"
         )
         # await update.message.reply_text()
-        bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
+        bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text,  reply_markup=reply_markup)
         # try:
         #     await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, response_text, "bot")
         # except Exception as db_error:
