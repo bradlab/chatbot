@@ -58,11 +58,12 @@ class DynamoDBRepository:
                 item['ai_model'] = ai_model
 
             # Exécute l'opération put_item (synchrone) dans un thread séparé
-            await asyncio.to_thread(self.table.put_item, Item=item)
-            Utils.log_info(f"Message enregistré dans DynamoDB: chat_id={chat_id}, role={role}")
+            return await asyncio.to_thread(self.table.put_item, Item=item)
+            # Utils.log_info(f"Message enregistré dans DynamoDB: chat_id={chat_id}, role={role}")
         except Exception as e:
             Utils.log_error(f"Erreur lors de l'enregistrement dans DynamoDB: {e}")
             # L'erreur n'est pas levée pour ne pas interrompre le flux du bot
+            return
             
     async def get_chat_history(self, chat_id: int, limit: int = 100) -> list[dict]:
         """

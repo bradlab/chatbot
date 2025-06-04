@@ -41,7 +41,14 @@ async def start_command(update: Update, context):
             resize_keyboard=True
         )
         
-        # await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, "user", user_message)
+        await dynamodb_repo.save_message(
+            chat_id=chat_id,
+            message_id=message_id,
+            user_id=str(user.id),
+            user_name=user_name,
+            text=user_message,
+            role="user"
+        )
         response_text = (
             f"Hello {user_name}! How can I assist you today? Let's have a friendly conversation. Here are a few suggestions for how we can proceed:\n\n"
             "• You can ask me a question about a topic you're interested in.\n"
@@ -53,59 +60,76 @@ async def start_command(update: Update, context):
         # await update.message.reply_text()
         bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text,  reply_markup=reply_markup)
         # await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, response_text, "bot")
+        await dynamodb_repo.save_message(
+            chat_id=chat_id,
+            message_id=bot_message.message_id,
+            user_id=str(ptb_app.bot.id),
+            user_name=ptb_app.bot.username,
+            text=response_text,
+            role="bot"
+        )
     except Exception as e:
         Utils.log_error(f"Start command error ==== {e}")
     
 
-async def handle_message(update: Update, context):
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        if update.message and update.message.text:
-            user = update.message.from_user
-            user_message = update.message.text
-            chat_id = update.message.chat_id
-            message_id = update.message.message_id
-            user_name = user.full_name or user.username or "N/A"
-            
-            Utils.log_warning(f"KOZ_MSG ======= {user_name} - {user_message}")
-            # await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
-            Utils.log_warning(f"CONTINUE PROCESS ======= {user_name}")
-            
-            try:
-                Utils.log_warning(f"GET MISTRAL RESPONSE ======")
-                chat_response = mistral_client.chat.complete(
-                    model=MISTRAL_MODEL,
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": user_message,
-                        },
-                    ]
-                )
-                Utils.log_warning(f"AFTER MISTRAL ======= {chat_response}")
-                
-                if (chat_response):
-                    response_text = chat_response.choices[0].message.content
-                    
-                    bot_message  = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
-                    
-                    # Enregistrement dans DynamoDB
-                    # await dynamodb_repo.save_message(
-                    #     chat_id, 
-                    #     bot_message.message_id, 
-                    #     ptb_app.bot.id, 
-                    #     ptb_app.bot.username, 
-                    #     response_text,
-                    #     "bot",
-                    #     MISTRAL_MODEL
-                    # )
-                    Utils.log_warning(f"ANSWER SAVED =======")
-            except Exception as e:
-                error_response = "Sorry, an error occurred while processing your message. "
-                Utils.log_error(f"{error_response}: {e}")
-                bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=error_response)
-                # await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, error_response, "bot")
+        if update.message is None:
+            return
+        message = update.message
+        if not message:
+            return  # Ignore les événements sans message (ex : edits, joins)
+
+        user = message.from_user
+        if user is None or user.is_bot:
+            return  # Ignore les messages envoyés par des bots, y compris lui-même
+
+        chat_id = str(message.chat_id)
+        message_id = str(message.message_id)
+        user_name = user.username or f"{user.first_name} {user.last_name or ''}"
+        user_message = message.text
+
+        # (1) Enregistrement du message utilisateur
+        await dynamodb_repo.save_message(
+            chat_id=chat_id,
+            message_id=message_id,
+            user_id=str(user.id),
+            user_name=user_name,
+            text=user_message,
+            role="user"
+        )
+
+        # (2) Appel à Mistral
+        Utils.log_warning(f"MISTRAL ==== {user_message} ")
+        chat_response = mistral_client.chat.complete(
+            model=MISTRAL_MODEL,
+            messages=[
+                {
+                    "role": "user",
+                    "content": user_message,
+                },
+            ]
+        )
+        bot_reply = chat_response.choices[0].message.content
+
+        # (3) Envoi de la réponse du bot
+        bot_message = await context.bot.send_message(
+            chat_id=chat_id,
+            text=bot_reply
+        )
+
+        # (4) Enregistrement du message du bot (mais on précise bien le role)
+        await dynamodb_repo.save_message(
+            chat_id=chat_id,
+            message_id=str(bot_message.message_id),
+            user_id=str(context.bot.id),
+            user_name=context.bot.username or "bot",
+            text=bot_reply,
+            role="bot"
+        )
+
     except Exception as e:
-        Utils.log_error("Traitement du message échoué.")
+        Utils.log_error(f"[handle_message] Erreur: {e}")
 
 async def help_command(update: Update, context):
     try:
