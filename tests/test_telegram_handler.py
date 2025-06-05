@@ -1,6 +1,16 @@
+pytest_plugins = ("pytest_asyncio",)
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from src.telegram_handler import telegram_handler
+
+from src.main import app
+from fastapi.testclient import TestClient
+
+@pytest.fixture(scope="module")
+def client():
+    with TestClient(app) as c:
+        yield c
 
 @pytest.mark.asyncio
 async def test_start_command_sends_menu(monkeypatch):
@@ -11,7 +21,6 @@ async def test_start_command_sends_menu(monkeypatch):
     mock_update.message.chat_id = 123
     mock_update.message.text = "/start"
 
-    # Patch send_message
     send_message_mock = AsyncMock()
     monkeypatch.setattr(telegram_handler.ptb_app.bot, "send_message", send_message_mock)
 
