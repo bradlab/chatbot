@@ -41,7 +41,7 @@ class WebhookRequest(BaseModel):
 @asynccontextmanager
 async def app_lifespan(application: FastAPI):
     Utils.log_info("Application KOZ API  démarrée.")
-    await telegram_handler.setup_ptb_handlers()
+    # await telegram_handler.setup_ptb_handlers()
     # asyncio.create_task(configure_telegram_webhook())
 
     yield # L'application est maintenant prête à recevoir des requêtes

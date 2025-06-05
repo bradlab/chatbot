@@ -31,6 +31,8 @@ class TelegramHandler:
         self.mistral_client = Mistral(api_key=self.MISTRAL_API_KEY)
         self.ptb_app = Application.builder().token(self.TELEGRAM_BOT_TOKEN).updater(None).build()
         self._initialized = True
+        self.setup_ptb_handlers()
+        
 
     async def start_command(self, update: Update, context):
         try:
