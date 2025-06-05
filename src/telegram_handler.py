@@ -39,7 +39,6 @@ class TelegramHandler:
             user = update.message.from_user
             chat_id = update.message.chat_id
             user_name = user.full_name or user.username or "N/A"
-            Utils.log_warning(f"===== Start command Initializing ====== {self.TELEGRAM_BOT_TOKEN}")
 
             reply_markup = ReplyKeyboardMarkup(
                 [["/start", "/help", "/clear"]],
@@ -65,7 +64,7 @@ class TelegramHandler:
                 user_name = user.full_name or user.username or "N/A"
 
                 Utils.log_warning(f"KOZ_MSG ======= {user_name} - {user_message}")
-                await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
+                # await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
 
                 Utils.log_warning(f"GET MISTRAL RESPONSE ======")
                 chat_response = self.mistral_client.chat.complete(
@@ -84,15 +83,15 @@ class TelegramHandler:
 
                     bot_message = await self.ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
 
-                    await dynamodb_repo.save_message(
-                        chat_id,
-                        bot_message.message_id,
-                        self.ptb_app.bot.id,
-                        self.ptb_app.bot.username,
-                        response_text,
-                        "bot",
-                        self.MISTRAL_MODEL
-                    )
+                    # await dynamodb_repo.save_message(
+                    #     chat_id,
+                    #     bot_message.message_id,
+                    #     self.ptb_app.bot.id,
+                    #     self.ptb_app.bot.username,
+                    #     response_text,
+                    #     "bot",
+                    #     self.MISTRAL_MODEL
+                    # )
                     Utils.log_warning(f"ANSWER SAVED =======")
         except Exception as e:
             error_response = "Désolé, une erreur est survenue lors du traitement de votre demande."
