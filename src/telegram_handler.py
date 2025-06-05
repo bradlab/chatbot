@@ -31,7 +31,7 @@ class TelegramHandler:
         self.mistral_client = Mistral(api_key=self.MISTRAL_API_KEY)
         self.ptb_app = Application.builder().token(self.TELEGRAM_BOT_TOKEN).updater(None).build()
         self._initialized = True
-        self.setup_ptb_handlers()
+        # self.setup_ptb_handlers()
         
 
     async def start_command(self, update: Update, context):
@@ -66,42 +66,38 @@ class TelegramHandler:
 
                 Utils.log_warning(f"KOZ_MSG ======= {user_name} - {user_message}")
                 await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
-                Utils.log_warning(f"CONTINUE PROCESS ======= {user_name}")
 
-                try:
-                    Utils.log_warning(f"GET MISTRAL RESPONSE ======")
-                    chat_response = self.mistral_client.chat.complete(
-                        model=self.MISTRAL_MODEL,
-                        messages=[
-                            {
-                                "role": "user",
-                                "content": user_message,
-                            },
-                        ]
+                Utils.log_warning(f"GET MISTRAL RESPONSE ======")
+                chat_response = self.mistral_client.chat.complete(
+                    model=self.MISTRAL_MODEL,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": user_message,
+                        },
+                    ]
+                )
+                Utils.log_warning(f"AFTER MISTRAL ======")
+
+                if chat_response:
+                    response_text = chat_response.choices[0].message.content
+
+                    bot_message = await self.ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
+
+                    await dynamodb_repo.save_message(
+                        chat_id,
+                        bot_message.message_id,
+                        self.ptb_app.bot.id,
+                        self.ptb_app.bot.username,
+                        response_text,
+                        "bot",
+                        self.MISTRAL_MODEL
                     )
-                    Utils.log_warning(f"AFTER MISTRAL ====== {chat_response}")
-
-                    if chat_response:
-                        response_text = chat_response.choices[0].message.content
-
-                        bot_message = await self.ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
-
-                        await dynamodb_repo.save_message(
-                            chat_id,
-                            bot_message.message_id,
-                            self.ptb_app.bot.id,
-                            self.ptb_app.bot.username,
-                            response_text,
-                            "bot",
-                            self.MISTRAL_MODEL
-                        )
-                        Utils.log_warning(f"ANSWER SAVED =======")
-                except Exception as e:
-                    error_response = "Désolé, une erreur est survenue lors du traitement de votre demande."
-                    Utils.log_error(f"{error_response}: {e}")
-                    await self.ptb_app.bot.send_message(chat_id=chat_id, text=error_response)
+                    Utils.log_warning(f"ANSWER SAVED =======")
         except Exception as e:
-            Utils.log_error("Traitement du message échoué.")
+            error_response = "Désolé, une erreur est survenue lors du traitement de votre demande."
+            await self.ptb_app.bot.send_message(chat_id=chat_id, text=error_response)
+            Utils.log_error(f"[handle_message] Erreur: {e}")
 
     async def help_command(self, update: Update, context):
         try:
