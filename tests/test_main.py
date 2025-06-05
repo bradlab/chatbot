@@ -56,41 +56,18 @@ def test_noread_prompt(client):
     assert response.status_code == 404
     assert response.json() != {"msg": "Hola", "response": ""}
 
-# calculator.py
-class Calculator:
-    def add(self, a, b):
-        return a + b
-
-    def divide(self, a, b):
-        if b == 0:
-            raise ValueError("Division by zero is not allowed")
-        return a / b
-
-@pytest.fixture
-def calculator():
-    return Calculator()
-
-def test_add_positive_numbers(calculator):
-    result = calculator.add(2, 3)
-    assert result == 5
-
-def test_add_negative_numbers(calculator):
-    result = calculator.add(-1, -4)
-    assert result == -5
-
-def test_add_zero(calculator):
-    result = calculator.add(10, 0)
-    assert result == 10
-
-def test_divide_valid_numbers(calculator):
-    result = calculator.divide(10, 2)
-    assert result == 5.0
-
-def test_divide_by_zero(calculator):
-    with pytest.raises(ValueError, match="Division by zero is not allowed"):
-        calculator.divide(10, 0)
-
-def test_divide_negative_numbers(calculator):
-    result = calculator.divide(-10, 2)
-    assert result == -5.0
-    
+def test_webhook_post(client):
+    # Simule un update Telegram minimal
+    update_json = {
+        "update_id": 123456789,
+        "message": {
+            "message_id": 1,
+            "from": {"id": 123, "is_bot": False, "first_name": "Test"},
+            "chat": {"id": 123, "type": "private"},
+            "date": 1680000000,
+            "text": "Bonjour"
+        }
+    }
+    response = client.post("/webhook", json=update_json)
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
