@@ -7,3 +7,4 @@ httpx
 mistralai
 python-telegram-bot
 slowapi
+pytest-asyncio
