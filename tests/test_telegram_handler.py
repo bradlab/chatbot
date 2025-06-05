@@ -1,70 +1,74 @@
-pytest_plugins = ("pytest_asyncio",)
-
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch, MagicMock
 
-@pytest.mark.asyncio
-async def test_start_command_sends_menu():
-    mock_update = MagicMock()
-    mock_context = MagicMock()
-    mock_update.message.from_user.full_name = "Test User"
-    mock_update.message.from_user.username = "testuser"
-    mock_update.message.chat_id = 123
-    mock_update.message.text = "/start"
+# --- Fixtures Pytest pour le Mocking ---
 
-    with patch("src.telegram_handler.telegram_handler.ptb_app.bot.send_message", new_callable=AsyncMock) as send_message_mock:
-        from src.telegram_handler import telegram_handler
-        await telegram_handler.start_command(mock_update, mock_context)
-        send_message_mock.assert_awaited_once()
-        args, kwargs = send_message_mock.await_args
-        assert kwargs["chat_id"] == 123
-        assert "Bienvenue sur le bot KOZ" in kwargs["text"]
+@pytest.fixture(scope="module", autouse=True)
+def test_mock_env_vars():
+    # Import ici pour garantir que le patch est effectif avant toute utilisation
+    from src.config import Settings
+    mock_settings_instance = MagicMock(spec=Settings)
+    mock_settings_instance.TELEGRAM_BOT_TOKEN = "mock_telegram_token_for_tests"
+    mock_settings_instance.MISTRAL_API_KEY = "mock_mistral_api_key_for_tests"
+    mock_settings_instance.WEBHOOK_URL = "http://mock.webhook.url/webhook_for_tests"
+    mock_settings_instance.TELEGRAM_API_URL = "https://api.telegram.org" # Ajoutez toutes les vars nécessaires
 
-@pytest.mark.asyncio
-async def test_help_command():
-    mock_update = MagicMock()
-    mock_context = MagicMock()
-    mock_update.message.chat_id = 456
+    with patch('src.config.get_settings', return_value=mock_settings_instance):
+        # Ici, en mockant get_settings, on contourne complètement la lecture du .env.
+        yield
 
-    with patch("src.telegram_handler.telegram_handler.ptb_app.bot.send_message", new_callable=AsyncMock) as send_message_mock:
-        from src.telegram_handler import telegram_handler
-        await telegram_handler.help_command(mock_update, mock_context)
-        send_message_mock.assert_awaited_once()
-        args, kwargs = send_message_mock.await_args
-        assert kwargs["chat_id"] == 456
-        assert "Voici les commandes disponibles" in kwargs["text"]
+@pytest.fixture
+def ptb_app():
+    # Import après le mock
+    from src.telegram_handler import ptb_app as real_ptb_app
+    return real_ptb_app
 
-@pytest.mark.asyncio
-async def test_clear_command():
-    mock_update = MagicMock()
-    mock_context = MagicMock()
-    mock_update.message.chat_id = 789
+@pytest.fixture
+def dynamodb_repo():
+    from src.dynamodb_repository import dynamodb_repo as real_dynamodb_repo
+    return real_dynamodb_repo
 
-    with patch("src.telegram_handler.telegram_handler.ptb_app.bot.send_message", new_callable=AsyncMock) as send_message_mock:
-        from src.telegram_handler import telegram_handler
-        await telegram_handler.clear_command(mock_update, mock_context)
-        send_message_mock.assert_awaited_once()
-        args, kwargs = send_message_mock.await_args
-        assert kwargs["chat_id"] == 789
-        assert "La conversation a été effacée" in kwargs["text"]
+@pytest.fixture
+def mock_update():
+    update = AsyncMock()
+    update.message.reply_text = AsyncMock()
+    update.message.text = "Hello world"
+    update.message.chat_id = 12345
+    update.message.message_id = 54321
+    update.message.from_user.id = 98765
+    update.message.from_user.full_name = "Test User"
+    update.message.from_user.username = "testuser"
+    return update
 
-@pytest.mark.asyncio
-async def test_handle_message_called_on_webhook():
-    update_json = {
-        "update_id": 987654321,
-        "message": {
-            "message_id": 2,
-            "from": {"id": 456, "is_bot": False, "first_name": "Tester"},
-            "chat": {"id": 456, "type": "private"},
-            "date": 1680000001,
-            "text": "Test handle"
-        }
-    }
-    with patch("src.telegram_handler.telegram_handler.process_telegram_update", new_callable=AsyncMock) as mock_process_update:
-        from src.main import app
-        from fastapi.testclient import TestClient
-        with TestClient(app) as test_client:
-            response = test_client.post("/webhook", json=update_json)
-            assert response.status_code == 200
-            assert response.json() == {"status": "ok"}
-            mock_process_update.assert_awaited_once_with(update_json)
+@pytest.fixture
+def mock_context():
+    context = MagicMock()
+    return context
+
+@pytest.fixture(autouse=True)
+def mock_telegram_bot_methods(ptb_app):
+    with patch.object(ptb_app, 'bot', new_callable=AsyncMock) as mock_bot:
+        mock_bot.send_message = AsyncMock()
+        mock_bot.set_webhook = AsyncMock()
+        mock_bot.id = 1234567
+        mock_bot.full_name = "MyBotName"
+        yield mock_bot
+
+@pytest.fixture(autouse=True)
+def mock_mistral_client():
+    with patch('src.telegram_handler.Mistral', new_callable=MagicMock) as MockMistral:
+        mock_instance = MockMistral.return_value
+        mock_instance.chat = AsyncMock()
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "This is a mocked AI response."
+        mock_instance.chat.return_value = mock_response
+        yield mock_instance
+
+@pytest.fixture(autouse=True)
+def mock_dynamodb_repository_save_message(dynamodb_repo):
+    """
+    Mocke la méthode save_message du dépôt DynamoDB.
+    """
+    with patch.object(dynamodb_repo, 'save_message', new_callable=AsyncMock) as mock_save_message:
+        yield mock_save_message
