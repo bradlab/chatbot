@@ -1,5 +1,3 @@
-pytest_plugins = ("pytest_asyncio",)
-
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from src.telegram_handler import telegram_handler
@@ -11,6 +9,20 @@ from fastapi.testclient import TestClient
 def client():
     with TestClient(app) as c:
         yield c
+
+@pytest.fixture(autouse=True)
+def mock_telegram_handler_singleton():
+    """
+    Mocke le singleton telegram_handler pour éviter l'exécution réelle.
+    """
+    mock_handler = MagicMock()
+    mock_handler.setup_ptb_handlers = AsyncMock(return_value=None)
+    mock_handler.configure_telegram_webhook = AsyncMock(return_value=None)
+    mock_handler.process_telegram_update = AsyncMock(return_value=None)
+    mock_handler.shutdown_ptb = AsyncMock(return_value=None)
+
+    with patch('src.telegram_handler.telegram_handler', mock_handler):
+        yield
 
 @pytest.mark.asyncio
 async def test_start_command_sends_menu(monkeypatch):
