@@ -1,203 +1,171 @@
 from telegram import Update, Bot, ReplyKeyboardMarkup
 from telegram.ext import Application, MessageHandler, filters, CommandHandler, ContextTypes
 from mistralai import Mistral
-import asyncio
 
 from .dynamodb_repository import dynamodb_repo
 from .config import env_vars
 from .utils import Utils
 
-api_key = env_vars.MISTRAL_API_KEY
-# Récupérer les jetons depuis les variables d'environnement
-TELEGRAM_BOT_TOKEN = env_vars.TELEGRAM_BOT_TOKEN
-MISTRAL_API_KEY = env_vars.MISTRAL_API_KEY
-# API_WEBHOOK_URL = f"{env_vars.TELEGRAM_API_URL}{TELEGRAM_BOT_TOKEN}/setWebhook?url={env_vars.WEBHOOK_URL}" 
-MISTRAL_MODEL = "mistral-large-latest"
+class TelegramHandler:
+    _instance = None
 
-if not TELEGRAM_BOT_TOKEN:
-    raise ValueError("TELEGRAM_BOT_TOKEN n'est pas défini.")
-if not MISTRAL_API_KEY:
-    raise ValueError("MISTRAL_API_KEY n'est pas défini.")
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(TelegramHandler, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
 
-# Initialisation du client MistralAI
-mistral_client = Mistral(api_key=MISTRAL_API_KEY)
-
-# Initialisation de l'application Python-Telegram-Bot
-ptb_app = Application.builder().token(TELEGRAM_BOT_TOKEN).updater(None).build()
-
-async def start_command(update: Update, context):
-    try:
-        # Gère la commande /start.
-        user = update.message.from_user
-        user_message = update.message.text
-        chat_id = update.message.chat_id
-        message_id = update.message.message_id
-        user_name = user.full_name or user.username or "N/A"
-        Utils.log_warning(f"===== Start command Initializing ====== {TELEGRAM_BOT_TOKEN}")
-        
-        # Menu clavier
-        reply_markup = ReplyKeyboardMarkup(
-            [["/start", "/help"]],
-            resize_keyboard=True
-        )
-        
-        await dynamodb_repo.save_message(
-            chat_id=chat_id,
-            message_id=message_id,
-            user_id=str(user.id),
-            user_name=user_name,
-            text=user_message,
-            role="user"
-        )
-        response_text = (
-            f"Hello {user_name}! How can I assist you today? Let's have a friendly conversation. Here are a few suggestions for how we can proceed:\n\n"
-            "• You can ask me a question about a topic you're interested in.\n"
-            "• We can play a word game, like word association or 20 questions.\n"
-            "• You can share something about yourself, and I'll do my best to relate.\n"
-            "• We can discuss a recent event or trending topic.\n\n"
-            "How would you like to begin?"
-        )
-        # await update.message.reply_text()
-        bot_message = await ptb_app.bot.send_message(chat_id=chat_id, text=response_text,  reply_markup=reply_markup)
-        # await dynamodb_repo.save_message(chat_id, bot_message.message_id, ptb_app.bot.id, ptb_app.bot.username, response_text, "bot")
-        await dynamodb_repo.save_message(
-            chat_id=chat_id,
-            message_id=bot_message.message_id,
-            user_id=str(ptb_app.bot.id),
-            user_name=ptb_app.bot.username,
-            text=response_text,
-            role="bot"
-        )
-    except Exception as e:
-        Utils.log_error(f"Start command error ==== {e}")
-    
-
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        if update.message is None:
+    def __init__(self):
+        if self._initialized:
             return
-        message = update.message
-        if not message:
-            return  # Ignore les événements sans message (ex : edits, joins)
+        self.api_key = env_vars.MISTRAL_API_KEY
+        self.TELEGRAM_BOT_TOKEN = env_vars.TELEGRAM_BOT_TOKEN
+        self.MISTRAL_API_KEY = env_vars.MISTRAL_API_KEY
+        self.MISTRAL_MODEL = "mistral-large-latest"
 
-        user = message.from_user
-        if user is None or user.is_bot:
-            return  # Ignore les messages envoyés par des bots, y compris lui-même
+        if not self.TELEGRAM_BOT_TOKEN:
+            raise ValueError("TELEGRAM_BOT_TOKEN n'est pas défini.")
+        if not self.MISTRAL_API_KEY:
+            raise ValueError("MISTRAL_API_KEY n'est pas défini.")
 
-        chat_id = str(message.chat_id)
-        message_id = str(message.message_id)
-        user_name = user.username or f"{user.first_name} {user.last_name or ''}"
-        user_message = message.text
+        self.mistral_client = Mistral(api_key=self.MISTRAL_API_KEY)
+        self.ptb_app = Application.builder().token(self.TELEGRAM_BOT_TOKEN).updater(None).build()
+        self._initialized = True
 
-        # (1) Enregistrement du message utilisateur
-        await dynamodb_repo.save_message(
-            chat_id=chat_id,
-            message_id=message_id,
-            user_id=str(user.id),
-            user_name=user_name,
-            text=user_message,
-            role="user"
-        )
+    async def start_command(self, update: Update, context):
+        try:
+            user = update.message.from_user
+            chat_id = update.message.chat_id
+            user_name = user.full_name or user.username or "N/A"
+            Utils.log_warning(f"===== Start command Initializing ====== {self.TELEGRAM_BOT_TOKEN}")
 
-        # (2) Appel à Mistral
-        Utils.log_warning(f"MISTRAL ==== {user_message} ")
-        chat_response = mistral_client.chat.complete(
-            model=MISTRAL_MODEL,
-            messages=[
-                {
-                    "role": "user",
-                    "content": user_message,
-                },
-            ]
-        )
-        bot_reply = chat_response.choices[0].message.content
+            reply_markup = ReplyKeyboardMarkup(
+                [["/start", "/help", "/clear"]],
+                resize_keyboard=True
+            )
 
-        # (3) Envoi de la réponse du bot
-        bot_message = await context.bot.send_message(
-            chat_id=chat_id,
-            text=bot_reply
-        )
+            response_text = (
+                f"Bonjour {user_name} !\n"
+                "Bienvenue sur le bot KOZ.\n"
+                "Utilisez le menu ci-dessous pour commencer :"
+            )
+            await self.ptb_app.bot.send_message(chat_id=chat_id, text=response_text, reply_markup=reply_markup)
+        except Exception as e:
+            Utils.log_error(f"Start command error ==== {e}")
 
-        # (4) Enregistrement du message du bot (mais on précise bien le role)
-        await dynamodb_repo.save_message(
-            chat_id=chat_id,
-            message_id=str(bot_message.message_id),
-            user_id=str(context.bot.id),
-            user_name=context.bot.username or "bot",
-            text=bot_reply,
-            role="bot"
-        )
+    async def handle_message(self, update: Update, context):
+        try:
+            if update.message and update.message.text:
+                user = update.message.from_user
+                user_message = update.message.text
+                chat_id = update.message.chat_id
+                message_id = update.message.message_id
+                user_name = user.full_name or user.username or "N/A"
 
-    except Exception as e:
-        Utils.log_error(f"[handle_message] Erreur: {e}")
+                Utils.log_warning(f"KOZ_MSG ======= {user_name} - {user_message}")
+                await dynamodb_repo.save_message(chat_id, message_id, user.id, user_name, user_message, "user")
+                Utils.log_warning(f"CONTINUE PROCESS ======= {user_name}")
 
-async def help_command(update: Update, context):
-    try:
-        chat_id = update.message.chat_id
-        response_text = (
-            "Voici les commandes disponibles :\n"
-            "/start - Afficher le menu principal\n"
-            "/help - Afficher l'aide\n"
-            "/clear - Effacer la conversation"
-        )
-        await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
-    except Exception as e:
-        Utils.log_error(f"Help command error ==== {e}")
+                try:
+                    Utils.log_warning(f"GET MISTRAL RESPONSE ======")
+                    chat_response = self.mistral_client.chat.complete(
+                        model=self.MISTRAL_MODEL,
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": user_message,
+                            },
+                        ]
+                    )
+                    Utils.log_warning(f"AFTER MISTRAL ====== {chat_response}")
 
-async def clear_command(update: Update, context):
-    try:
-        chat_id = update.message.chat_id
-        response_text = "La conversation a été effacée"
-        await ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
-        # Ici tu peux ajouter la logique pour effacer l'historique si besoin
-    except Exception as e:
-        Utils.log_error(f"Clear command error ==== {e}")
+                    if chat_response:
+                        response_text = chat_response.choices[0].message.content
 
+                        bot_message = await self.ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
 
-async def _error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-    Utils.log_error(f"== Unhandled Telegram exception: {context.error}")
+                        await dynamodb_repo.save_message(
+                            chat_id,
+                            bot_message.message_id,
+                            self.ptb_app.bot.id,
+                            self.ptb_app.bot.username,
+                            response_text,
+                            "bot",
+                            self.MISTRAL_MODEL
+                        )
+                        Utils.log_warning(f"ANSWER SAVED =======")
+                except Exception as e:
+                    error_response = "Désolé, une erreur est survenue lors du traitement de votre demande."
+                    Utils.log_error(f"{error_response}: {e}")
+                    await self.ptb_app.bot.send_message(chat_id=chat_id, text=error_response)
+        except Exception as e:
+            Utils.log_error("Traitement du message échoué.")
 
-        
-async def setup_ptb_handlers():
-    try:
-        # Configure les handlers de l'application Python-Telegram-Bot
-        ptb_app.add_handler(CommandHandler("start", start_command))
-        ptb_app.add_handler(CommandHandler("help", help_command))
-        ptb_app.add_handler(CommandHandler("clear", clear_command))
-        Utils.log_warning("Handle first message ====")
-        ptb_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-        ptb_app.add_error_handler(_error_handler)
-        await ptb_app.initialize()
-        Utils.log_warning("Handlers Telegram initialisés.")
-    except Exception as e:
-        Utils.log_error(f"Erreur lors de la configuration des handlers Telegram : {e}")
+    async def help_command(self, update: Update, context):
+        try:
+            chat_id = update.message.chat_id
+            response_text = (
+                "Voici les commandes disponibles :\n"
+                "/start - Afficher le menu principal\n"
+                "/help - Afficher l'aide\n"
+                "/clear - Effacer la conversation"
+            )
+            await self.ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
+        except Exception as e:
+            Utils.log_error(f"Help command error ==== {e}")
 
-async def configure_telegram_webhook(webhook_url: str):
-    api_webhook_url = f"{env_vars.TELEGRAM_API_URL}{TELEGRAM_BOT_TOKEN}/setWebhook?url={webhook_url}" 
-    if not api_webhook_url:
-        Utils.log_error("WEBHOOK_URL non défini. Le webhook ne sera pas configuré automatiquement.")
-        return
+    async def clear_command(self, update: Update, context):
+        try:
+            chat_id = update.message.chat_id
+            response_text = "La conversation a été effacée"
+            await self.ptb_app.bot.send_message(chat_id=chat_id, text=response_text)
+        except Exception as e:
+            Utils.log_error(f"Clear command error ==== {e}")
 
-    bot = Bot(TELEGRAM_BOT_TOKEN)
-    try:
-        current_webhook = await bot.get_webhook_info()
-        Utils.log_warning(f"=== TELEGRAM to connect : \n NEW : {webhook_url} \n OLD: {current_webhook.url}")
-        if current_webhook.url != api_webhook_url:
-            try:
-                await bot.set_webhook(url=api_webhook_url)
-                Utils.log_warning(f"Webhook Telegram configuré sur : {webhook_url}")
-            except Exception as bot_error:
-                Utils.log_error(f"Erreur configuration du webhook url : {e}")
-        else:
-            Utils.log_warning("Webhook déjà configuré, aucune modification nécessaire.")
-    except Exception as e:
-        Utils.log_error(f"Erreur lors de la configuration du webhook Telegram : {webhook_url} {e}")
+    async def _error_handler(self, update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+        Utils.log_error(f"== Unhandled Telegram exception: {context.error}")
 
-async def process_telegram_update(update_json: dict):
-    update = Update.de_json(update_json, ptb_app.bot)
-    await ptb_app.process_update(update)
+    async def setup_ptb_handlers(self):
+        try:
+            self.ptb_app.add_handler(CommandHandler("start", self.start_command))
+            self.ptb_app.add_handler(CommandHandler("help", self.help_command))
+            self.ptb_app.add_handler(CommandHandler("clear", self.clear_command))
+            Utils.log_warning("Handle first message ====")
+            self.ptb_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
+            self.ptb_app.add_error_handler(self._error_handler)
+            await self.ptb_app.initialize()
+            Utils.log_warning("Handlers Telegram initialisés.")
+        except Exception as e:
+            Utils.log_error(f"Erreur lors de la configuration des handlers Telegram : {e}")
 
-async def shutdown_ptb():
-    # Arrête l'application Python-Telegram-Bot.
-    await ptb_app.shutdown()
-    Utils.log_warning("Application Telegram arrêtée.")
+    async def configure_telegram_webhook(self, webhook_url: str):
+        api_webhook_url = f"{env_vars.TELEGRAM_API_URL}{self.TELEGRAM_BOT_TOKEN}/setWebhook?url={webhook_url}"
+        if not api_webhook_url:
+            Utils.log_error("WEBHOOK_URL non défini. Le webhook ne sera pas configuré automatiquement.")
+            return
+
+        bot = Bot(self.TELEGRAM_BOT_TOKEN)
+        try:
+            current_webhook = await bot.get_webhook_info()
+            Utils.log_warning(f"=== TELEGRAM to connect : \n NEW : {webhook_url} \n OLD: {current_webhook.url}")
+            if current_webhook.url != api_webhook_url:
+                try:
+                    await bot.set_webhook(url=api_webhook_url)
+                    Utils.log_warning(f"Webhook Telegram configuré sur : {webhook_url}")
+                except Exception as bot_error:
+                    Utils.log_error(f"Erreur configuration du webhook url : {bot_error}")
+            else:
+                Utils.log_warning("Webhook déjà configuré, aucune modification nécessaire.")
+        except Exception as e:
+            Utils.log_error(f"Erreur lors de la configuration du webhook Telegram : {webhook_url} {e}")
+
+    async def process_telegram_update(self, update_json: dict):
+        update = Update.de_json(update_json, self.ptb_app.bot)
+        await self.ptb_app.process_update(update)
+
+    async def shutdown_ptb(self):
+        await self.ptb_app.shutdown()
+        Utils.log_warning("Application Telegram arrêtée.")
+
+# Singleton instance
+telegram_handler = TelegramHandler()

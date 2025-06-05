@@ -12,18 +12,18 @@ from pydantic import BaseModel, HttpUrl
 from typing import Optional
 from .config import env_vars
 
-import asyncio
+from .telegram_handler import telegram_handler
 
 from .dynamodb_repository import dynamodb_repo
 
 
 # Importe les fonctions de traitement Telegram
-from .telegram_handler import (
-    setup_ptb_handlers,
-    configure_telegram_webhook,
-    process_telegram_update,
-    shutdown_ptb
-)
+# from .telegram_handler import (
+#     setup_ptb_handlers,
+#     configure_telegram_webhook,
+#     process_telegram_update,
+#     shutdown_ptb
+# )
 
 from .config import env_vars
 
@@ -41,13 +41,13 @@ class WebhookRequest(BaseModel):
 @asynccontextmanager
 async def app_lifespan(application: FastAPI):
     Utils.log_info("Application KOZ API  démarrée.")
-    await setup_ptb_handlers()
+    await telegram_handler.setup_ptb_handlers()
     # asyncio.create_task(configure_telegram_webhook())
 
     yield # L'application est maintenant prête à recevoir des requêtes
 
     Utils.log_info("Application KOZ API arrêtée.")
-    await shutdown_ptb()
+    await telegram_handler.shutdown_ptb()
 
 
 app = FastAPI(
@@ -132,14 +132,14 @@ async def set_webhook(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token")
 
     Utils.log_warning(f"START == webhook == CONFIG: {payload.url}")
-    await configure_telegram_webhook(payload.url)
+    await telegram_handler.configure_telegram_webhook(payload.url)
     return WebhookResponse(status="ok", webhook_set_to=payload.url)
 
 @app.post("/webhook", description="Endpoint pour recevoir les mises à jour ou changement dans le bot Telegram")
 async def telegram_webhook(request: Request):
     try:
         update_json = await request.json()
-        await process_telegram_update(update_json)
+        await telegram_handler.process_telegram_update(update_json)
         
         return {"status": "ok"}
     except Exception as e:
