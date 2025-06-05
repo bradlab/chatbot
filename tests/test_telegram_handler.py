@@ -2,7 +2,6 @@ pytest_plugins = ("pytest_asyncio",)
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from src.telegram_handler import telegram_handler
 
 @pytest.mark.asyncio
 async def test_start_command_sends_menu():
@@ -13,18 +12,13 @@ async def test_start_command_sends_menu():
     mock_update.message.chat_id = 123
     mock_update.message.text = "/start"
 
-    # Patch send_message sur l'instance du bot via setattr
-    send_message_mock = AsyncMock()
-    original_send_message = telegram_handler.ptb_app.bot.send_message
-    setattr(telegram_handler.ptb_app.bot, "send_message", send_message_mock)
-    try:
+    with patch("src.telegram_handler.telegram_handler.ptb_app.bot.send_message", new_callable=AsyncMock) as send_message_mock:
+        from src.telegram_handler import telegram_handler
         await telegram_handler.start_command(mock_update, mock_context)
         send_message_mock.assert_awaited_once()
         args, kwargs = send_message_mock.await_args
         assert kwargs["chat_id"] == 123
         assert "Bienvenue sur le bot KOZ" in kwargs["text"]
-    finally:
-        setattr(telegram_handler.ptb_app.bot, "send_message", original_send_message)
 
 @pytest.mark.asyncio
 async def test_help_command():
@@ -32,17 +26,13 @@ async def test_help_command():
     mock_context = MagicMock()
     mock_update.message.chat_id = 456
 
-    send_message_mock = AsyncMock()
-    original_send_message = telegram_handler.ptb_app.bot.send_message
-    setattr(telegram_handler.ptb_app.bot, "send_message", send_message_mock)
-    try:
+    with patch("src.telegram_handler.telegram_handler.ptb_app.bot.send_message", new_callable=AsyncMock) as send_message_mock:
+        from src.telegram_handler import telegram_handler
         await telegram_handler.help_command(mock_update, mock_context)
         send_message_mock.assert_awaited_once()
         args, kwargs = send_message_mock.await_args
         assert kwargs["chat_id"] == 456
         assert "Voici les commandes disponibles" in kwargs["text"]
-    finally:
-        setattr(telegram_handler.ptb_app.bot, "send_message", original_send_message)
 
 @pytest.mark.asyncio
 async def test_clear_command():
@@ -50,23 +40,16 @@ async def test_clear_command():
     mock_context = MagicMock()
     mock_update.message.chat_id = 789
 
-    send_message_mock = AsyncMock()
-    original_send_message = telegram_handler.ptb_app.bot.send_message
-    setattr(telegram_handler.ptb_app.bot, "send_message", send_message_mock)
-    try:
+    with patch("src.telegram_handler.telegram_handler.ptb_app.bot.send_message", new_callable=AsyncMock) as send_message_mock:
+        from src.telegram_handler import telegram_handler
         await telegram_handler.clear_command(mock_update, mock_context)
         send_message_mock.assert_awaited_once()
         args, kwargs = send_message_mock.await_args
         assert kwargs["chat_id"] == 789
         assert "La conversation a été effacée" in kwargs["text"]
-    finally:
-        setattr(telegram_handler.ptb_app.bot, "send_message", original_send_message)
 
 @pytest.mark.asyncio
 async def test_handle_message_called_on_webhook():
-    """
-    Vérifie que process_telegram_update (donc handle_message) est bien appelé lors d'un POST /webhook.
-    """
     update_json = {
         "update_id": 987654321,
         "message": {
@@ -77,7 +60,6 @@ async def test_handle_message_called_on_webhook():
             "text": "Test handle"
         }
     }
-
     with patch("src.telegram_handler.telegram_handler.process_telegram_update", new_callable=AsyncMock) as mock_process_update:
         from src.main import app
         from fastapi.testclient import TestClient
