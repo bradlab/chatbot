@@ -63,7 +63,7 @@ class DynamoDBRepository:
         except Exception as e:
             Utils.log_error(f"Erreur lors de l'enregistrement dans DynamoDB: {e}")
             # L'erreur n'est pas levée pour ne pas interrompre le flux du bot
-            return
+            raise e
             
     async def get_chat_history(self, chat_id: int, limit: int = 100) -> list[dict]:
         """
