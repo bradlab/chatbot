@@ -45,21 +45,23 @@ class DynamoDBRepository:
         try:
             id = str(uuid.uuid4())  # Génère un UUID
             item = {
-                'id': id,
-                'chat_id': str(chat_id),
-                'timestamp': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                'message_id': str(message_id),
-                'user_id': str(user_id),
-                'user_name': user_name,
-                'text': text,
-                'role': role,
+                "id": {"S": str(id)},
+                "chat_id": {"S": str(chat_id)},
+                "timestamp": {"S": datetime.datetime.now(datetime.timezone.utc).isoformat()},
+                "message_id": {"S": str(message_id)},
+                "user_id": {"S": str(user_id)},
+                "user_name": {"S": user_name},
+                "text": {"S": text},
+                "role": {"S": role},
             }
             if ai_model:
-                item['ai_model'] = ai_model
+                item["ai_model"] = {"S": ai_model}
+            
+            Utils.insert_data(item)
 
             # Exécute l'opération put_item (synchrone) dans un thread séparé
-            return await asyncio.to_thread(self.table.put_item, Item=item)
-            # Utils.log_info(f"Message enregistré dans DynamoDB: chat_id={chat_id}, role={role}")
+            # return await asyncio.to_thread(self.table.put_item, Item=item)
+            return True
         except Exception as e:
             Utils.log_error(f"Erreur lors de l'enregistrement dans DynamoDB: {e}")
             # L'erreur n'est pas levée pour ne pas interrompre le flux du bot
