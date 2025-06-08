@@ -44,18 +44,29 @@ class DynamoDBRepository:
         """
         try:
             id = str(uuid.uuid4())  # Génère un UUID
+            # item = {
+            #     "id": {"S": str(id)},
+            #     "chat_id": {"S": str(chat_id)},
+            #     "timestamp": {"S": datetime.datetime.now(datetime.timezone.utc).isoformat()},
+            #     "message_id": {"S": str(message_id)},
+            #     "user_id": {"S": str(user_id)},
+            #     "user_name": {"S": user_name},
+            #     "text": {"S": text},
+            #     "role": {"S": role},
+            # }
             item = {
-                "id": {"S": str(id)},
-                "chat_id": {"S": str(chat_id)},
-                "timestamp": {"S": datetime.datetime.now(datetime.timezone.utc).isoformat()},
-                "message_id": {"S": str(message_id)},
-                "user_id": {"S": str(user_id)},
-                "user_name": {"S": user_name},
-                "text": {"S": text},
-                "role": {"S": role},
+                'id': id,
+                'chat_id': str(chat_id),
+                'timestamp': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'message_id': str(message_id),
+                'user_id': str(user_id),
+                'user_name': user_name,
+                'text': text,
+                'role': role,
             }
             if ai_model:
-                item["ai_model"] = {"S": ai_model}
+                item["ai_model"] = str(ai_model)
+                # item["ai_model"] = {"S": ai_model}
             
             # Utils.insert_data(item)
 
