@@ -71,7 +71,7 @@ class DynamoDBRepository:
             # Utils.insert_data(item)
 
             # Exécute l'opération put_item (synchrone) dans un thread séparé
-            await asyncio.to_thread(self.table.put_item, Item=item)
+            # await asyncio.to_thread(self.table.put_item, Item=item)
             return True
         except Exception as e:
             Utils.log_error(f"Erreur lors de l'enregistrement dans DynamoDB: {e}")
