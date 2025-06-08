@@ -1,12 +1,10 @@
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
-import os
-import datetime
 
 # --- Fixtures Pytest pour le Mocking ---
 
 @pytest.fixture(scope="module", autouse=True)
-def mock_env_vars():
+def test_mock_env_vars():
     # Import ici pour garantir que le patch est effectif avant toute utilisation
     from src.config import Settings
     mock_settings_instance = MagicMock(spec=Settings)

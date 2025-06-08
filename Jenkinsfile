@@ -8,7 +8,8 @@ pipeline {
     environment {
         // Define environment variables here
         BOT_NAME = 'awesome-bot'
-        // BOT_TOKEN = credentials('telegram-bot-token')
+        TELEGRAM_BOT_TOKEN = credentials('telegram-bot-token')
+        MISTRAL_API_KEY = credentials('mistral-api-key')
     }
 
     stages {
@@ -22,7 +23,7 @@ pipeline {
         stage('Environment variable injection') {
             steps {
                 script {
-                    withCredentials([file(credentialsId: 'matbradiouf-chatbot-env-file', variable: 'ENV_FILE')]) {
+                    withCredentials([file(credentialsId: 'bradlab-chatbot-env-file', variable: 'ENV_FILE')]) {
                         // Load the environment variables from the file
                         echo "Loading environment variables from ${ENV_FILE}"
                         sh "cat ${ENV_FILE} > .env"
@@ -53,16 +54,77 @@ pipeline {
         }
 
         stage('Deploy') {
+            when {
+                anyOf {
+                    branch 'bradlab'
+                    branch 'dev'
+                    branch 'preprod'
+                    branch 'prod'
+                }
+            }
             steps {
                 script {
                     // Add your deployment commands here
                     echo "Deploying the project..."
-                    sh "make deploy env=${BRANCH_NAME}"
+                    withCredentials([
+                        string(credentialsId: 'telegram-bot-token', variable: 'TELEGRAM_BOT_TOKEN'),
+                        string(credentialsId: 'mistral-api-key', variable: 'MISTRAL_API_KEY')
+                    ]) {
+                        sh """
+                            make deploy env=${BRANCH_NAME} \
+                            TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN} \
+                            MISTRAL_API_KEY=${MISTRAL_API_KEY}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Configure Webhook') {
+            when {
+                anyOf {
+                    branch 'bradlab'
+                    branch 'dev'
+                    branch 'preprod'
+                    branch 'prod'
+                }
+            }
+            steps {
+                script {
+                    // Get the API URL from CloudFormation outputs
+                    def apiUrl = sh(
+                        script: """
+                            aws cloudformation describe-stacks \
+                            --stack-name multi-stack-${BRANCH_NAME} \
+                            --region eu-west-3 \
+                            --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" \
+                            --output text
+                        """,
+                        returnStdout: true
+                    ).trim()
+
+                    // Configure the webhook
+                    withCredentials([string(credentialsId: 'telegram-bot-token', variable: 'TELEGRAM_BOT_TOKEN')]) {
+                        sh """
+                            curl -X POST "${apiUrl}set-webhook" \\
+                                -H "Authorization: Bearer ${TELEGRAM_BOT_TOKEN}" \\
+                                -H "Content-Type: application/json" \\
+                                -d '{ "url": "${apiUrl}webhook" }'
+                        """
+                    }
                 }
             }
         }
 
         stage('Test endpoint'){
+            when {
+                anyOf {
+                    branch 'bradlab'
+                    branch 'dev'
+                    branch 'preprod'
+                    branch 'prod'
+                }
+            }
             steps {
                 script {
                     // Add your endpoint testing commands here

@@ -1,6 +1,5 @@
 import boto3
-import datetime
-import asyncio
+import datetime, asyncio, uuid
 
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key, Attr
@@ -44,9 +43,20 @@ class DynamoDBRepository:
         Sauvegarde un message (utilisateur ou bot) dans la table DynamoDB.
         """
         try:
-                
+            id = str(uuid.uuid4())  # Génère un UUID
+            # item = {
+            #     "id": {"S": str(id)},
+            #     "chat_id": {"S": str(chat_id)},
+            #     "timestamp": {"S": datetime.datetime.now(datetime.timezone.utc).isoformat()},
+            #     "message_id": {"S": str(message_id)},
+            #     "user_id": {"S": str(user_id)},
+            #     "user_name": {"S": user_name},
+            #     "text": {"S": text},
+            #     "role": {"S": role},
+            # }
             item = {
-                'id': str(chat_id),
+                'id': id,
+                'chat_id': str(chat_id),
                 'timestamp': datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 'message_id': str(message_id),
                 'user_id': str(user_id),
@@ -55,14 +65,18 @@ class DynamoDBRepository:
                 'role': role,
             }
             if ai_model:
-                item['ai_model'] = ai_model
+                item["ai_model"] = str(ai_model)
+                # item["ai_model"] = {"S": ai_model}
+            
+            # Utils.insert_data(item)
 
             # Exécute l'opération put_item (synchrone) dans un thread séparé
-            await asyncio.to_thread(self.table.put_item, Item=item)
-            Utils.log_info(f"Message enregistré dans DynamoDB: chat_id={chat_id}, role={role}")
+            # await asyncio.to_thread(self.table.put_item, Item=item)
+            return True
         except Exception as e:
             Utils.log_error(f"Erreur lors de l'enregistrement dans DynamoDB: {e}")
             # L'erreur n'est pas levée pour ne pas interrompre le flux du bot
+            raise e
             
     async def get_chat_history(self, chat_id: int, limit: int = 100) -> list[dict]:
         """
@@ -70,14 +84,15 @@ class DynamoDBRepository:
         Retourne une liste de dictionnaires représentant les messages.
         """
         try:
+            # return Utils.get_chat_history(chat_id=chat_id, limit=limit)
             response = await asyncio.to_thread(
                 self.table.query,
-                KeyConditionExpression=Key('id').eq(str(chat_id)),
+                KeyConditionExpression=Key('chat_id').eq(str(chat_id)),
                 Limit=limit,
                 ScanIndexForward=True # True pour tri ascendant (du plus ancien au plus récent)
             )
             Utils.log_info(f"Historique du chat {chat_id} récupéré. Messages trouvés: {len(response.get('Items', []))}")
-            return response.get('Items', [])
+            # return response.get('Items', [])
         except ClientError as e:
             error_code = e.response['Error']['Code']
             Utils.log_error(f"Erreur DynamoDB lors de la récupération de l'historique: {error_code} - {e}")
@@ -94,6 +109,7 @@ class DynamoDBRepository:
         """
         gsi_name = "UserIndex"
         try:
+            # return Utils.get_user_chats(user_id, start_timestamp, end_timestamp, limit)
             query_params = {
                 'IndexName': gsi_name,
                 'KeyConditionExpression': Key('user_id').eq(str(user_id)) & Key('timestamp').between(start_timestamp, end_timestamp),

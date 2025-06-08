@@ -1,21 +1,29 @@
-from fastapi import FastAPI, Request, HTTPException, Query
+from fastapi import FastAPI, Request, HTTPException, Header, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from mangum import Mangum
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 import datetime
 from mistralai import Mistral
-import asyncio
+from pydantic import BaseModel, HttpUrl
+from typing import Optional
+from .config import env_vars
+
+from .telegram_handler import telegram_handler
 
 from .dynamodb_repository import dynamodb_repo
 
 
 # Importe les fonctions de traitement Telegram
-from .telegram_handler import (
-    setup_ptb_handlers,
-    configure_telegram_webhook,
-    process_telegram_update,
-    shutdown_ptb
-)
+# from .telegram_handler import (
+#     setup_ptb_handlers,
+#     configure_telegram_webhook,
+#     process_telegram_update,
+#     shutdown_ptb
+# )
 
 from .config import env_vars
 
@@ -26,18 +34,20 @@ api_key = env_vars.MISTRAL_API_KEY
 model = "mistral-small-latest"
 client = Mistral(api_key=api_key)
 
+class WebhookRequest(BaseModel):
+    url: HttpUrl
 
 
 @asynccontextmanager
 async def app_lifespan(application: FastAPI):
     Utils.log_info("Application KOZ API  démarrée.")
-    await setup_ptb_handlers()
-    asyncio.create_task(configure_telegram_webhook()) # <-- C'est la source probable du problème
+    await telegram_handler.setup_ptb_handlers()
+    # asyncio.create_task(configure_telegram_webhook())
 
     yield # L'application est maintenant prête à recevoir des requêtes
 
     Utils.log_info("Application KOZ API arrêtée.")
-    await shutdown_ptb()
+    await telegram_handler.shutdown_ptb()
 
 
 app = FastAPI(
@@ -54,6 +64,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Initialise le rate limiter (par IP)
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
+@app.middleware("http")
+@limiter.limit("100/minute")
+async def global_rate_limit(request: Request, call_next):
+    return await call_next(request)
 
 
 @app.get("/")
@@ -78,7 +99,7 @@ async def chat(question: str):
     )
     Utils.log_info(chat_response)
     response = {
-        "id": {
+        "chat_id": {
             "S": f"{chat_response.id}",
         },
         "question": {
@@ -89,22 +110,37 @@ async def chat(question: str):
         }
     }
     Utils.insert_data(response)
-    await dynamodb_repo.save_message(
-        "7d6d6416cff4477082d884dbc1d50254", 
-        "7d6d6416cff4477082d884dbc1d51293", 
-        "mybot_id1354", 
-        "toto_machin",
-        "user",
-        chat_response.choices[0].message.content,
-        "mistral-large-latest"
-    )
     return response
+
+# Modèle pour la réponse
+class WebhookResponse(BaseModel):
+    status: str
+    webhook_set_to: HttpUrl
+
+@app.post("/set-webhook", response_model=WebhookResponse, include_in_schema=False)
+async def set_webhook(
+    payload: WebhookRequest,
+    authorization: Optional[str] = Header(None, description="Bearer token for authentication")
+):
+    if authorization is None or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid Authorization header")
+
+    token = authorization.split("Bearer ")[-1]
+
+    # Vérifie que le token correspond à celui attendu (à adapter selon ton besoin)
+    if token != env_vars.TELEGRAM_BOT_TOKEN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token")
+
+    Utils.log_warning(f"START == webhook == CONFIG: {payload.url}")
+    await telegram_handler.configure_telegram_webhook(payload.url)
+    return WebhookResponse(status="ok", webhook_set_to=payload.url)
 
 @app.post("/webhook", description="Endpoint pour recevoir les mises à jour ou changement dans le bot Telegram")
 async def telegram_webhook(request: Request):
     try:
         update_json = await request.json()
-        await process_telegram_update(update_json)
+        await telegram_handler.process_telegram_update(update_json)
+        
         return {"status": "ok"}
     except Exception as e:
         Utils.log_error(f"Erreur de traitement du webhook: {e}")

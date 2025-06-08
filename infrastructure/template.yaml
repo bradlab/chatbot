@@ -9,11 +9,42 @@ Parameters:
     Description: Environment name for the application dev/staging/production
     Type: String
     AllowedValues:
-      - matbradiouf
+      - bradlab
       - dev
       - preprod
       - prod
-    Default: matbradiouf
+    Default: bradlab
+###############################################################################
+
+  AWSRegionName:
+    Description: AWS region where resources will be deployed (e.g. eu-west-3)
+    Type: String
+    Default: eu-west-3
+  DynamoTable:
+    Description: Name of the DynamoDB table used to persist chatbot conversations
+    Type: String
+    Default: ""
+    NoEcho: true
+  AwsProfile:
+    Description: AWS CLI profile name used for deployment (for local/devops usage)
+    Type: String
+    Default: esgis_profile
+  MistralApiKey:
+    Description: API key for accessing the Mistral AI service
+    Type: String
+    Default: ""
+    NoEcho: true
+  TelegramBotToken:
+    Description: Telegram bot token for authenticating with the Telegram API
+    Type: String
+    Default: ""
+    NoEcho: true
+  ApiWehookUrl:
+    Type: String
+    Default: ""
+  TelegramApiBotUrl:
+    Type: String
+    Default: https://api.telegram.org/bot
 ###############################################################################
 Resources:
 ###############################################################################
@@ -23,7 +54,7 @@ Resources:
       TableName: !Sub "chatbot-dbtable-${EnvironmentName}"
       # Définition des attributs utilisés comme clés pour la table principale et les GSI
       AttributeDefinitions:
-        - AttributeName: "id"
+        - AttributeName: "chat_id"
           AttributeType: "S"
         - AttributeName: "timestamp"
           AttributeType: "S"
@@ -31,7 +62,7 @@ Resources:
           AttributeType: "S"
       # Schéma de la clé primaire de la table principale
       KeySchema:
-        - AttributeName: "id"
+        - AttributeName: "chat_id"
           KeyType: "HASH"
         - AttributeName: "timestamp"
           KeyType: "RANGE"
@@ -51,7 +82,7 @@ Resources:
           Projection:
             ProjectionType: "INCLUDE"
             NonKeyAttributes: # Attributs à projeter en plus des clés de l'index et de la table
-              - "id"
+              - "chat_id"
               - "message_id"
               - "role"
               - "text"
@@ -67,6 +98,33 @@ Resources:
       CodeUri: ../
       Handler: src/main.handler
       Runtime: python3.12
+      Environment:
+        Variables:
+          ENV_NAME: !Ref EnvironmentName
+          AWS_REGION_NAME: !Ref AWSRegionName
+          DYNAMO_TABLE: !Ref DynamoDBTable
+          MISTRAL_API_KEY: !Ref MistralApiKey
+          TELEGRAM_BOT_TOKEN: !Ref TelegramBotToken
+          TELEGRAM_API_URL: !Ref TelegramApiBotUrl
+          WEBHOOK_URL:  !Ref ApiWehookUrl
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:DeleteItem
+                - dynamodb:PutItem
+                - dynamodb:Query
+                - dynamodb:UpdateItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:BatchGetItem
+                - dynamodb:DescribeTable
+                - dynamodb:ConditionCheckItem
+                - apigateway:POST
+                - apigateway:GET
+              Resource: "*"
       Events:
         Api:
           Type: HttpApi
@@ -83,6 +141,6 @@ Outputs:
   DynamoDBTableName:
     Value: !Ref DynamoDBTable
   ApiUrl:
-    Description: URL of your API
+    Description: URL of our API
     Value:
       Fn::Sub: 'https://${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}/'

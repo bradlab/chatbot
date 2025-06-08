@@ -6,3 +6,4 @@ mangum
 httpx
 mistralai
 python-telegram-bot
+slowapi
