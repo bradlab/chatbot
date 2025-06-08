@@ -122,6 +122,8 @@ Resources:
                 - dynamodb:BatchGetItem
                 - dynamodb:DescribeTable
                 - dynamodb:ConditionCheckItem
+                - apigateway:POST
+                - apigateway:GET
               Resource: "*"
       Events:
         Api:
