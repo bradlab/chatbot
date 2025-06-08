@@ -17,17 +17,17 @@ class DynamoDBRepository:
         self.region_name = env_vars.AWS_REGION_NAME
         self._table = None # Sera initialisé lors du premier accès
 
-    @property
-    def table(self):
-        """
-        Initialise la table DynamoDB si elle n'est pas déjà initialisée.
-        Utilise un singleton-like pour la table.
-        """
-        if self._table is None:
-            Utils.log_info(f"Initialisation de la connexion DynamoDB à la table: {self.table_name} en région: {self.region_name}")
-            dynamodb = boto3.resource('dynamodb', region_name=self.region_name)
-            self._table = dynamodb.Table(self.table_name)
-        return self._table
+    # @property
+    # def table(self):
+    #     """
+    #     Initialise la table DynamoDB si elle n'est pas déjà initialisée.
+    #     Utilise un singleton-like pour la table.
+    #     """
+    #     if self._table is None:
+    #         Utils.log_info(f"Initialisation de la connexion DynamoDB à la table: {self.table_name} en région: {self.region_name}")
+    #         dynamodb = boto3.resource('dynamodb', region_name=self.region_name)
+    #         self._table = dynamodb.Table(self.table_name)
+    #     return self._table
 
     async def save_message(
         self, 
@@ -73,18 +73,19 @@ class DynamoDBRepository:
         Retourne une liste de dictionnaires représentant les messages.
         """
         try:
-            response = await asyncio.to_thread(
-                self.table.query,
-                KeyConditionExpression=Key('chat_id').eq(str(chat_id)),
-                Limit=limit,
-                ScanIndexForward=True # True pour tri ascendant (du plus ancien au plus récent)
-            )
-            Utils.log_info(f"Historique du chat {chat_id} récupéré. Messages trouvés: {len(response.get('Items', []))}")
-            return response.get('Items', [])
-        except ClientError as e:
-            error_code = e.response['Error']['Code']
-            Utils.log_error(f"Erreur DynamoDB lors de la récupération de l'historique: {error_code} - {e}")
-            return []
+            return Utils.get_chat_history(chat_id=chat_id, limit=limit)
+            # response = await asyncio.to_thread(
+            #     self.table.query,
+            #     KeyConditionExpression=Key('chat_id').eq(str(chat_id)),
+            #     Limit=limit,
+            #     ScanIndexForward=True # True pour tri ascendant (du plus ancien au plus récent)
+            # )
+            # Utils.log_info(f"Historique du chat {chat_id} récupéré. Messages trouvés: {len(response.get('Items', []))}")
+        #     # return response.get('Items', [])
+        # except ClientError as e:
+        #     error_code = e.response['Error']['Code']
+        #     Utils.log_error(f"Erreur DynamoDB lors de la récupération de l'historique: {error_code} - {e}")
+        #     return []
         except Exception as e:
             Utils.log_error(f"Erreur inattendue lors de la récupération de l'historique: {e}")
             return []
@@ -95,31 +96,32 @@ class DynamoDBRepository:
         dans une plage de dates donnée, en utilisant le GSI 'UserIndex' (cf fichier dynamo.bash). 
         Les timestamps doivent être au format ISO 8601 (ex: "2025-01-01T00:00:00Z").
         """
-        gsi_name = "UserIndex"
+        # gsi_name = "UserIndex"
         try:
-            query_params = {
-                'IndexName': gsi_name,
-                'KeyConditionExpression': Key('user_id').eq(str(user_id)) & Key('timestamp').between(start_timestamp, end_timestamp),
-                'Limit': limit,
-                'ScanIndexForward': True # Du plus ancien au plus récent
-            }
+            return Utils.get_user_chats(user_id, start_timestamp, end_timestamp, limit)
+            # query_params = {
+            #     'IndexName': gsi_name,
+            #     'KeyConditionExpression': Key('user_id').eq(str(user_id)) & Key('timestamp').between(start_timestamp, end_timestamp),
+            #     'Limit': limit,
+            #     'ScanIndexForward': True # Du plus ancien au plus récent
+            # }
             
-            items = []
-            response = await asyncio.to_thread(self.table.query, **query_params)
-            items.extend(response.get('Items', []))
+            # items = []
+            # response = await asyncio.to_thread(self.table.query, **query_params)
+            # items.extend(response.get('Items', []))
 
-            while 'LastEvaluatedKey' in response:
-                query_params['ExclusiveStartKey'] = response['LastEvaluatedKey']
-                response = await asyncio.to_thread(self.table.query, **query_params)
-                items.extend(response.get('Items', []))
+            # while 'LastEvaluatedKey' in response:
+            #     query_params['ExclusiveStartKey'] = response['LastEvaluatedKey']
+            #     response = await asyncio.to_thread(self.table.query, **query_params)
+            #     items.extend(response.get('Items', []))
 
-            Utils.log_info(f"Messages pour l'utilisateur {user_id} dans la plage {start_timestamp} à {end_timestamp} récupérés. Messages trouvés: {len(items)}")
-            return items
+            # Utils.log_info(f"Messages pour l'utilisateur {user_id} dans la plage {start_timestamp} à {end_timestamp} récupérés. Messages trouvés: {len(items)}")
+            # return items
 
-        except ClientError as e:
-            error_code = e.response['Error']['Code']
-            Utils.log_error(f"Erreur DynamoDB lors de la récupération des messages de l'utilisateur par plage de date: {error_code} - {e}")
-            return []
+        # except ClientError as e:
+        #     error_code = e.response['Error']['Code']
+        #     Utils.log_error(f"Erreur DynamoDB lors de la récupération des messages de l'utilisateur par plage de date: {error_code} - {e}")
+        #     return []
         except Exception as e:
             Utils.log_error(f"Erreur inattendue lors de la récupération des messages de l'utilisateur par plage de date: {e}")
             return []
